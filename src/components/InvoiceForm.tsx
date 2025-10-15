@@ -99,6 +99,9 @@ export const InvoiceForm = ({ businessName, logoUrl }: InvoiceFormProps) => {
       const canvas = await html2canvas(element, {
         scale: 2,
         backgroundColor: "#ffffff",
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
       });
       
       const link = document.createElement("a");
@@ -121,6 +124,9 @@ export const InvoiceForm = ({ businessName, logoUrl }: InvoiceFormProps) => {
       const canvas = await html2canvas(element, {
         scale: 2,
         backgroundColor: "#ffffff",
+        useCORS: true,
+        allowTaint: true,
+        logging: false,
       });
       
       const link = document.createElement("a");

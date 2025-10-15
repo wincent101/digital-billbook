@@ -61,6 +61,7 @@ export const InvoicePreview = ({
               src={logoUrl}
               alt="Logo"
               className="h-16 w-16 object-contain rounded-lg shadow-md"
+              crossOrigin="anonymous"
             />
           ) : (
             <div className="h-16 w-16 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
