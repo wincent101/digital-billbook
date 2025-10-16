@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, History } from "lucide-react";
+import { Settings, FileText, History, LogOut, Shield } from "lucide-react";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import { SettingsPage } from "@/components/SettingsPage";
 import { InvoiceHistory } from "@/components/InvoiceHistory";
@@ -11,10 +12,41 @@ const Index = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [businessName, setBusinessName] = useState("ชื่อร้านของคุณ");
   const [logoUrl, setLogoUrl] = useState<string>("");
+  const [isAdmin, setIsAdmin] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
+    checkAuth();
     loadBusinessSettings();
   }, [showSettings]);
+
+  const checkAuth = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      navigate("/auth");
+      return;
+    }
+
+    // Check if user is admin
+    const { data: roleData } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    setIsAdmin(!!roleData);
+
+    // Set up auth state listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!session) {
+        navigate("/auth");
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  };
 
   const loadBusinessSettings = async () => {
     try {
@@ -33,6 +65,11 @@ const Index = () => {
     } catch (error) {
       console.error("Load business settings error:", error);
     }
+  };
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
   };
 
   if (showSettings) {
@@ -56,14 +93,34 @@ const Index = () => {
                 <p className="text-sm text-muted-foreground">สร้างใบเสร็จอย่างมืออาชีพ</p>
               </div>
             </div>
-            <Button
-              onClick={() => setShowSettings(true)}
-              variant="outline"
-              className="gap-2 border-2 hover:border-primary transition-all"
-            >
-              <Settings className="h-4 w-4" />
-              ตั้งค่า
-            </Button>
+            <div className="flex gap-2">
+              {isAdmin && (
+                <Button
+                  onClick={() => navigate("/admin")}
+                  variant="outline"
+                  className="gap-2"
+                >
+                  <Shield className="h-4 w-4" />
+                  จัดการผู้ใช้
+                </Button>
+              )}
+              <Button
+                onClick={() => setShowSettings(true)}
+                variant="outline"
+                className="gap-2 border-2 hover:border-primary transition-all"
+              >
+                <Settings className="h-4 w-4" />
+                ตั้งค่า
+              </Button>
+              <Button
+                onClick={handleLogout}
+                variant="outline"
+                className="gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                ออกจากระบบ
+              </Button>
+            </div>
           </div>
         </div>
       </header>
