@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText } from "lucide-react";
+import { Settings, FileText, History } from "lucide-react";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import { SettingsPage } from "@/components/SettingsPage";
+import { InvoiceHistory } from "@/components/InvoiceHistory";
 import { supabase } from "@/integrations/supabase/client";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const [showSettings, setShowSettings] = useState(false);
@@ -70,14 +72,33 @@ const Index = () => {
       <main className="container mx-auto px-4 py-8">
         <div className="mb-8 text-center">
           <h2 className="text-4xl font-bold bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent mb-3">
-            สร้างใบเสร็จของคุณ
+            ระบบจัดการใบเสร็จ
           </h2>
           <p className="text-lg text-muted-foreground">
-            ระบบออกใบเสร็จที่สวยงามและมืออาชีพ พร้อม QR Code สำหรับลูกค้า
+            สร้างและจัดการใบเสร็จอย่างมืออาชีพ พร้อม QR Code สำหรับลูกค้า
           </p>
         </div>
 
-        <InvoiceForm businessName={businessName} logoUrl={logoUrl} />
+        <Tabs defaultValue="create" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+            <TabsTrigger value="create" className="gap-2">
+              <FileText className="h-4 w-4" />
+              สร้างใบเสร็จ
+            </TabsTrigger>
+            <TabsTrigger value="history" className="gap-2">
+              <History className="h-4 w-4" />
+              ประวัติ
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="create">
+            <InvoiceForm businessName={businessName} logoUrl={logoUrl} />
+          </TabsContent>
+
+          <TabsContent value="history">
+            <InvoiceHistory businessName={businessName} logoUrl={logoUrl} />
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Footer */}
