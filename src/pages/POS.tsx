@@ -7,6 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { ShoppingCart, Minus, Plus, Trash2, Receipt, ArrowLeft, Home, History } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentReceipt } from "@/components/PaymentReceipt";
+import generatePayload from "promptpay-qr";
 
 interface Product {
   id: string;
@@ -110,8 +111,17 @@ export default function POS() {
       const total = calculateTotal();
       const transactionNumber = generateTransactionNumber();
 
-      // สร้าง PromptPay QR Code data
-      const qrData = generatePromptPayQR("0987654321", total); // เปลี่ยนเบอร์PromptPay ตามต้องการ
+      // โหลดเบอร์พร้อมเพย์จาก business_settings
+      const { data: settings } = await supabase
+        .from("business_settings")
+        .select("phone_number")
+        .limit(1)
+        .maybeSingle();
+      
+      const promptPayNumber = settings?.phone_number || "0987654321";
+      
+      // สร้าง PromptPay QR Code data ตามมาตรฐาน EMVCo
+      const qrData = generatePayload(promptPayNumber, { amount: total });
 
       // สร้างธุรกรรม
       const { data: transaction, error: transactionError } = await supabase
@@ -160,22 +170,6 @@ export default function POS() {
     }
   };
 
-  const generatePromptPayQR = (phoneNumber: string, amount: number): string => {
-    // PromptPay QR Code generation (simplified)
-    // Format: 00020101021229370016A000000677010111{phone}5303764{amount}6304{checksum}
-    const phone = phoneNumber.replace(/\D/g, "").slice(-10);
-    const amountStr = amount.toFixed(2);
-    
-    // สร้าง payload ตาม EMVCo standard (simplified version)
-    let payload = "00020101021229370016A000000677010111";
-    payload += "0066" + phone.padStart(13, "0");
-    payload += "5303764"; // Currency: THB
-    payload += "54" + String(amountStr.length).padStart(2, "0") + amountStr;
-    payload += "5802TH"; // Country: Thailand
-    payload += "6304"; // CRC placeholder
-    
-    return payload;
-  };
 
   const handleReceiptClose = () => {
     setShowReceipt(false);

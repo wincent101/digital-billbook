@@ -64,6 +64,8 @@ export const PaymentReceipt = ({ transaction, onClose }: PaymentReceiptProps) =>
       const canvas = await html2canvas(receiptRef.current, {
         scale: 2,
         backgroundColor: "#ffffff",
+        useCORS: true,
+        allowTaint: true,
       });
 
       const imageUrl = canvas.toDataURL("image/png");
