@@ -7,11 +7,15 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useToast } from "@/hooks/use-toast";
-import { UserPlus, Trash2, Shield, LogOut } from "lucide-react";
+import { UserPlus, Trash2, Shield, LogOut, Package } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ProductManagement } from "@/components/ProductManagement";
+import { Badge } from "@/components/ui/badge";
 
 type UserWithRole = {
   id: string;
+  user_id: string;
   email: string;
   role: string;
   created_at: string;
@@ -24,6 +28,8 @@ const Admin = () => {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [deleteUserId, setDeleteUserId] = useState<string | null>(null);
+  const [currentUser, setCurrentUser] = useState<any>(null);
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -38,6 +44,8 @@ const Admin = () => {
       navigate("/auth");
       return;
     }
+
+    setCurrentUser(session.user);
 
     const { data: roleData } = await supabase
       .from("user_roles")
@@ -61,20 +69,24 @@ const Admin = () => {
   };
 
   const loadUsers = async () => {
-    // This would need an edge function to list all users
-    // For now, we'll show users who have roles assigned
-    const { data: rolesData } = await supabase
-      .from("user_roles")
-      .select("*");
+    setLoading(true);
+    try {
+      const { data: rolesData } = await supabase
+        .from("user_roles")
+        .select("*");
 
-    if (rolesData) {
-      const usersWithRoles: UserWithRole[] = rolesData.map((role: any) => ({
-        id: role.user_id,
-        email: "ดูใน Backend", // We can't fetch auth.users from client
-        role: role.role,
-        created_at: role.created_at,
-      }));
-      setUsers(usersWithRoles);
+      if (rolesData) {
+        const usersWithRoles: UserWithRole[] = rolesData.map((role: any) => ({
+          id: role.id,
+          user_id: role.user_id,
+          email: "ดูใน Backend",
+          role: role.role,
+          created_at: role.created_at,
+        }));
+        setUsers(usersWithRoles);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -100,12 +112,14 @@ const Admin = () => {
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUser = async () => {
+    if (!deleteUserId) return;
+
     try {
       const { error } = await supabase
         .from("user_roles")
         .delete()
-        .eq("user_id", userId);
+        .eq("id", deleteUserId);
 
       if (error) throw error;
 
@@ -120,6 +134,8 @@ const Admin = () => {
         description: "ไม่สามารถลบสิทธิ์ได้",
         variant: "destructive",
       });
+    } finally {
+      setDeleteUserId(null);
     }
   };
 
@@ -138,7 +154,7 @@ const Admin = () => {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Shield className="h-8 w-8 text-primary" />
-            <h1 className="text-3xl font-bold">จัดการผู้ใช้งาน</h1>
+            <h1 className="text-3xl font-bold">จัดการระบบ</h1>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" onClick={() => navigate("/")}>
@@ -151,138 +167,114 @@ const Admin = () => {
           </div>
         </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserPlus className="h-5 w-5" />
-              สร้างผู้ใช้ใหม่
-            </CardTitle>
-            <CardDescription>
-              สร้างบัญชีผู้ใช้ใหม่และกำหนดสิทธิ์
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleCreateUser} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="new-email">อีเมล</Label>
-                  <Input
-                    id="new-email"
-                    type="email"
-                    placeholder="user@example.com"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="new-password">รหัสผ่าน</Label>
-                  <Input
-                    id="new-password"
-                    type="password"
-                    placeholder="••••••••"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    required
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="role">สิทธิ์</Label>
-                <select
-                  id="role"
-                  value={role}
-                  onChange={(e) => setRole(e.target.value as "admin" | "user")}
-                  className="w-full px-3 py-2 border rounded-md"
-                >
-                  <option value="user">ผู้ใช้ทั่วไป</option>
-                  <option value="admin">ผู้ดูแลระบบ</option>
-                </select>
-              </div>
-              <div className="bg-muted p-4 rounded-lg">
-                <p className="text-sm text-muted-foreground">
-                  <strong>หมายเหตุ:</strong> ในขณะนี้การสร้างผู้ใช้ต้องทำผ่าน Lovable Cloud Backend
-                  <br />
-                  กรุณาไปที่ Backend → Authentication เพื่อสร้างผู้ใช้ใหม่
-                  <br />
-                  จากนั้นกลับมาที่หน้านี้เพื่อกำหนดสิทธิ์
-                </p>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+        <Tabs defaultValue="users" className="w-full">
+          <TabsList className="grid w-full max-w-md mx-auto grid-cols-2 mb-8">
+            <TabsTrigger value="users" className="gap-2">
+              <Shield className="h-4 w-4" />
+              จัดการผู้ใช้
+            </TabsTrigger>
+            <TabsTrigger value="products" className="gap-2">
+              <Package className="h-4 w-4" />
+              จัดการสินค้า
+            </TabsTrigger>
+          </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>รายการผู้ใช้</CardTitle>
-            <CardDescription>
-              ผู้ใช้ทั้งหมดในระบบ
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>User ID</TableHead>
-                  <TableHead>สิทธิ์</TableHead>
-                  <TableHead>วันที่สร้าง</TableHead>
-                  <TableHead className="text-right">จัดการ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {users.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">
-                      ไม่มีข้อมูลผู้ใช้
-                    </TableCell>
-                  </TableRow>
+          <TabsContent value="users">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Shield className="h-6 w-6" />
+                  จัดการผู้ใช้และสิทธิ์
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">กำลังโหลด...</p>
+                  </div>
+                ) : users.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">ยังไม่มีผู้ใช้ในระบบ</p>
+                  </div>
                 ) : (
-                  users.map((user) => (
-                    <TableRow key={user.id}>
-                      <TableCell className="font-mono text-xs">{user.id}</TableCell>
-                      <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs ${
-                          user.role === "admin" 
-                            ? "bg-primary/10 text-primary" 
-                            : "bg-secondary text-secondary-foreground"
-                        }`}>
-                          {user.role === "admin" ? "ผู้ดูแลระบบ" : "ผู้ใช้ทั่วไป"}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        {new Date(user.created_at).toLocaleDateString("th-TH")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>ยืนยันการลบสิทธิ์</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                คุณต้องการลบสิทธิ์ของผู้ใช้นี้หรือไม่?
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDeleteUser(user.id)}>
-                                ลบ
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </TableCell>
-                    </TableRow>
-                  ))
+                  <div className="overflow-x-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>อีเมล</TableHead>
+                          <TableHead>บทบาท</TableHead>
+                          <TableHead>วันที่สร้าง</TableHead>
+                          <TableHead className="text-right">จัดการ</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {users.map((user) => (
+                          <TableRow key={user.user_id}>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>
+                              <Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>
+                                {user.role === 'admin' ? 'ผู้ดูแลระบบ' : 'ผู้ใช้'}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              {new Date(user.created_at || '').toLocaleDateString('th-TH')}
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => setDeleteUserId(user.id)}
+                                disabled={user.user_id === currentUser?.id}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
                 )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+
+                <div className="mt-6 p-4 bg-muted rounded-lg">
+                  <h3 className="font-semibold mb-2 flex items-center gap-2">
+                    <UserPlus className="h-5 w-5" />
+                    เพิ่มผู้ใช้ใหม่
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    เนื่องจากระบบไม่มีหน้าลงทะเบียน คุณสามารถเพิ่มผู้ใช้ได้ 2 วิธี:
+                  </p>
+                  <ol className="list-decimal list-inside text-sm text-muted-foreground mt-2 space-y-1">
+                    <li>ไปที่ Lovable Cloud Backend → Authentication → ใช้ Dashboard สร้างผู้ใช้</li>
+                    <li>หลังจากสร้างผู้ใช้แล้ว กลับมาที่หน้านี้เพื่อกำหนดสิทธิ์</li>
+                  </ol>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="products">
+            <ProductManagement />
+          </TabsContent>
+        </Tabs>
       </div>
+
+      <AlertDialog open={!!deleteUserId} onOpenChange={() => setDeleteUserId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ยืนยันการลบสิทธิ์</AlertDialogTitle>
+            <AlertDialogDescription>
+              คุณต้องการลบสิทธิ์ของผู้ใช้นี้หรือไม่? การดำเนินการนี้ไม่สามารถย้อนกลับได้
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>ยกเลิก</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser}>
+              ลบ
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

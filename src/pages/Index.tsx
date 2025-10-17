@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, History, LogOut, Shield } from "lucide-react";
+import { Settings, FileText, History, LogOut, Shield, ShoppingCart } from "lucide-react";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import { SettingsPage } from "@/components/SettingsPage";
 import { InvoiceHistory } from "@/components/InvoiceHistory";
@@ -94,6 +94,14 @@ const Index = () => {
               </div>
             </div>
             <div className="flex gap-2">
+              <Button
+                onClick={() => navigate("/pos")}
+                variant="outline"
+                className="gap-2"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                ขายหน้าร้าน (POS)
+              </Button>
               {isAdmin && (
                 <Button
                   onClick={() => navigate("/admin")}
