@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -11,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Download, Eye, Trash2 } from "lucide-react";
+import { FileText, Download, Eye, Trash2, Home, ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -40,6 +41,7 @@ export const TransactionHistory = () => {
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewTransaction, setViewTransaction] = useState<any>(null);
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadTransactions();
@@ -155,8 +157,46 @@ export const TransactionHistory = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <Card>
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
+      {/* Header/Navbar */}
+      <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10 shadow-[var(--shadow-soft)]">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-md">
+                <FileText className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                  ประวัติการขาย
+                </h1>
+                <p className="text-sm text-muted-foreground">ดูและจัดการประวัติการทำรายการ</p>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => navigate("/pos")}
+                variant="outline"
+                className="gap-2"
+              >
+                <ShoppingCart className="h-4 w-4" />
+                ขายหน้าร้าน
+              </Button>
+              <Button
+                onClick={() => navigate("/")}
+                variant="outline"
+                className="gap-2"
+              >
+                <Home className="h-4 w-4" />
+                หน้าหลัก
+              </Button>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-8">
+        <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <FileText className="h-6 w-6" />
@@ -250,6 +290,7 @@ export const TransactionHistory = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      </div>
     </div>
   );
 };

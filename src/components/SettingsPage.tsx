@@ -13,6 +13,7 @@ interface SettingsPageProps {
 
 export const SettingsPage = ({ onBack }: SettingsPageProps) => {
   const [businessName, setBusinessName] = useState("ชื่อร้านของคุณ");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoUrl, setLogoUrl] = useState<string>("");
   const [settingsId, setSettingsId] = useState<string>("");
@@ -36,6 +37,7 @@ export const SettingsPage = ({ onBack }: SettingsPageProps) => {
 
       if (data) {
         setBusinessName(data.business_name);
+        setPhoneNumber(data.phone_number || "");
         setLogoUrl(data.logo_url || "");
         setSettingsId(data.id);
       }
@@ -83,6 +85,7 @@ export const SettingsPage = ({ onBack }: SettingsPageProps) => {
           .from("business_settings")
           .update({
             business_name: businessName,
+            phone_number: phoneNumber,
             logo_url: logoUrl,
           })
           .eq("id", settingsId);
@@ -91,6 +94,7 @@ export const SettingsPage = ({ onBack }: SettingsPageProps) => {
       } else {
         const { error } = await supabase.from("business_settings").insert({
           business_name: businessName,
+          phone_number: phoneNumber,
           logo_url: logoUrl,
         });
 
@@ -134,6 +138,20 @@ export const SettingsPage = ({ onBack }: SettingsPageProps) => {
                 value={businessName}
                 onChange={(e) => setBusinessName(e.target.value)}
                 placeholder="กรอกชื่อร้านค้าของคุณ"
+                className="text-lg h-12 border-2 focus:border-primary transition-all"
+                disabled={isLoading}
+              />
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="phoneNumber" className="text-lg font-semibold">
+                เบอร์โทรศัพท์
+              </Label>
+              <Input
+                id="phoneNumber"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="กรอกเบอร์โทรศัพท์ (เช่น 0812345678)"
                 className="text-lg h-12 border-2 focus:border-primary transition-all"
                 disabled={isLoading}
               />
