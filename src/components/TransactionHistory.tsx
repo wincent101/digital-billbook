@@ -260,6 +260,22 @@ export const TransactionHistory = () => {
                           </Button>
                           <Button
                             size="sm"
+                            variant="default"
+                            onClick={() => navigate("/", { 
+                              state: { 
+                                fromTransaction: true,
+                                transactionId: transaction.id,
+                                transactionNumber: transaction.transaction_number,
+                                totalAmount: transaction.total_amount
+                              } 
+                            })}
+                            className="gap-2"
+                          >
+                            <FileText className="h-4 w-4" />
+                            สร้างใบเสร็จ
+                          </Button>
+                          <Button
+                            size="sm"
                             variant="destructive"
                             onClick={() => setDeleteId(transaction.id)}
                           >

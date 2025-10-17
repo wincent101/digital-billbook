@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
-import { ShoppingCart, Minus, Plus, Trash2, Receipt, ArrowLeft, Home, History } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, Receipt, ArrowLeft, Home, History, User } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PaymentReceipt } from "@/components/PaymentReceipt";
 import generatePayload from "promptpay-qr";
+import { Label } from "@/components/ui/label";
 
 interface Product {
   id: string;
@@ -25,12 +26,30 @@ export default function POS() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [showReceipt, setShowReceipt] = useState(false);
   const [currentTransaction, setCurrentTransaction] = useState<any>(null);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [customerEmail, setCustomerEmail] = useState("");
+  const [customerAddress, setCustomerAddress] = useState("");
+  const [customers, setCustomers] = useState<any[]>([]);
+  const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     loadProducts();
+    loadCustomers();
   }, []);
+
+  useEffect(() => {
+    if (customerName.length > 0) {
+      const filtered = customers.filter(c => 
+        c.name.toLowerCase().includes(customerName.toLowerCase())
+      );
+      setShowCustomerSuggestions(filtered.length > 0);
+    } else {
+      setShowCustomerSuggestions(false);
+    }
+  }, [customerName, customers]);
 
   const loadProducts = async () => {
     try {
@@ -50,6 +69,28 @@ export default function POS() {
         variant: "destructive",
       });
     }
+  };
+
+  const loadCustomers = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("customers")
+        .select("*")
+        .order("name");
+
+      if (error) throw error;
+      setCustomers(data || []);
+    } catch (error) {
+      console.error("Load customers error:", error);
+    }
+  };
+
+  const selectCustomer = (customer: any) => {
+    setCustomerName(customer.name);
+    setCustomerPhone(customer.phone || "");
+    setCustomerEmail(customer.email || "");
+    setCustomerAddress(customer.address || "");
+    setShowCustomerSuggestions(false);
   };
 
   const addToCart = (product: Product) => {
@@ -107,9 +148,55 @@ export default function POS() {
       return;
     }
 
+    if (!customerName.trim()) {
+      toast({
+        title: "กรุณากรอกข้อมูลลูกค้า",
+        description: "กรุณากรอกชื่อลูกค้าก่อนทำรายการ",
+        variant: "destructive",
+      });
+      return;
+    }
+
     try {
       const total = calculateTotal();
       const transactionNumber = generateTransactionNumber();
+
+      // ตรวจสอบและบันทึกข้อมูลลูกค้า
+      let customerId = null;
+      const existingCustomer = customers.find(c => c.name === customerName);
+      
+      if (existingCustomer) {
+        // อัปเดตข้อมูลลูกค้าที่มีอยู่
+        const { data: updatedCustomer, error: updateError } = await supabase
+          .from("customers")
+          .update({
+            phone: customerPhone || existingCustomer.phone,
+            email: customerEmail || existingCustomer.email,
+            address: customerAddress || existingCustomer.address,
+          })
+          .eq("id", existingCustomer.id)
+          .select()
+          .single();
+
+        if (updateError) throw updateError;
+        customerId = updatedCustomer.id;
+      } else {
+        // สร้างข้อมูลลูกค้าใหม่
+        const { data: newCustomer, error: customerError } = await supabase
+          .from("customers")
+          .insert({
+            name: customerName,
+            phone: customerPhone,
+            email: customerEmail,
+            address: customerAddress,
+          })
+          .select()
+          .single();
+
+        if (customerError) throw customerError;
+        customerId = newCustomer.id;
+        setCustomers([...customers, newCustomer]);
+      }
 
       // โหลดเบอร์พร้อมเพย์จาก business_settings
       const { data: settings } = await supabase
@@ -131,6 +218,7 @@ export default function POS() {
           total_amount: total,
           payment_status: "pending",
           qr_code_data: qrData,
+          customer_id: customerId,
         })
         .select()
         .single();
@@ -153,7 +241,7 @@ export default function POS() {
 
       if (itemsError) throw itemsError;
 
-      setCurrentTransaction({ ...transaction, items: cart });
+      setCurrentTransaction({ ...transaction, items: cart, customerName });
       setShowReceipt(true);
 
       toast({
@@ -175,6 +263,10 @@ export default function POS() {
     setShowReceipt(false);
     setCurrentTransaction(null);
     clearCart();
+    setCustomerName("");
+    setCustomerPhone("");
+    setCustomerEmail("");
+    setCustomerAddress("");
   };
 
   if (showReceipt && currentTransaction) {
@@ -275,6 +367,46 @@ export default function POS() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
+                {/* Customer Information */}
+                <div className="border-b pb-4 space-y-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <User className="h-4 w-4" />
+                    <Label className="font-semibold">ข้อมูลลูกค้า</Label>
+                  </div>
+                  <div className="space-y-2 relative">
+                    <Input
+                      placeholder="คุณ..."
+                      value={customerName}
+                      onChange={(e) => setCustomerName(e.target.value)}
+                      onFocus={() => customerName && setShowCustomerSuggestions(true)}
+                      className="border-2 focus:border-primary"
+                    />
+                    {showCustomerSuggestions && (
+                      <div className="absolute z-10 w-full bg-card border-2 rounded-md shadow-lg max-h-40 overflow-y-auto">
+                        {customers
+                          .filter(c => c.name.toLowerCase().includes(customerName.toLowerCase()))
+                          .map(customer => (
+                            <div
+                              key={customer.id}
+                              className="p-2 hover:bg-accent cursor-pointer"
+                              onClick={() => selectCustomer(customer)}
+                            >
+                              <div className="font-semibold">{customer.name}</div>
+                              {customer.phone && (
+                                <div className="text-sm text-muted-foreground">{customer.phone}</div>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+                  <Input
+                    placeholder="เบอร์โทร (ถ้ามี)"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    className="border-2 focus:border-primary"
+                  />
+                </div>
                 {cart.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     ตะกร้าสินค้าว่างเปล่า

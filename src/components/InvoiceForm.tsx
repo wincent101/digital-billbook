@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,6 +16,7 @@ interface InvoiceFormProps {
 }
 
 export const InvoiceForm = ({ businessName, logoUrl }: InvoiceFormProps) => {
+  const location = useLocation();
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now()}`);
   const [referenceNumber, setReferenceNumber] = useState(`REF-${Date.now()}`);
   const [customerName, setCustomerName] = useState("");
@@ -23,6 +25,38 @@ export const InvoiceForm = ({ businessName, logoUrl }: InvoiceFormProps) => {
   const [fileUrl, setFileUrl] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  useEffect(() => {
+    // โหลดข้อมูลจาก transaction ถ้ามีการส่งมาจากหน้าประวัติการขาย
+    const loadTransactionData = async () => {
+      if (location.state?.fromTransaction) {
+        const { transactionId, transactionNumber } = location.state;
+        setReferenceNumber(transactionNumber);
+        
+        // โหลดข้อมูลลูกค้าจาก transaction
+        const { data: transaction } = await supabase
+          .from("pos_transactions")
+          .select("customer_id")
+          .eq("id", transactionId)
+          .maybeSingle();
+
+        if (transaction?.customer_id) {
+          const { data: customer } = await supabase
+            .from("customers")
+            .select("*")
+            .eq("id", transaction.customer_id)
+            .single();
+
+          if (customer) {
+            setCustomerName(customer.name);
+            setCustomerCode(customer.phone || customer.id);
+          }
+        }
+      }
+    };
+
+    loadTransactionData();
+  }, [location.state]);
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
