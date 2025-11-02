@@ -178,9 +178,9 @@ export const InvoicePreview = ({
           <div className="grid grid-cols-2 gap-12">
             <div className="text-center">
               <div className="h-20 border-b-2 border-border mb-3"></div>
-              <p className="text-sm font-semibold text-foreground">ผู้รับมอบงาน</p>
-              <p className="text-xs text-muted-foreground mt-1">Received by</p>
-              <p className="text-xs text-muted-foreground mt-2">วันที่ / Date: _______________</p>
+              <p className="text-sm font-semibold text-foreground">{customerName}</p>
+              <p className="text-xs text-muted-foreground mt-1">ผู้รับมอบงาน / Received by</p>
+              <p className="text-xs text-muted-foreground mt-2">วันที่ / Date: {format(createdAt, "dd/MM/yyyy", { locale: th })}</p>
             </div>
             <div className="text-center">
               <div className="h-20 border-b-2 border-border mb-3 flex items-center justify-center">
@@ -196,8 +196,8 @@ export const InvoicePreview = ({
                 )}
               </div>
               <p className="text-sm font-semibold text-foreground">{businessName}</p>
-              <p className="text-xs text-muted-foreground mt-1">Authorized Signature</p>
-              <p className="text-xs text-muted-foreground mt-2">{format(createdAt, "dd/MM/yyyy", { locale: th })}</p>
+              <p className="text-xs text-muted-foreground mt-1">ผู้มอบงาน / Authorized Signature</p>
+              <p className="text-xs text-muted-foreground mt-2">วันที่ / Date: {format(createdAt, "dd/MM/yyyy", { locale: th })}</p>
             </div>
           </div>
         </div>
