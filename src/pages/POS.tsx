@@ -30,6 +30,7 @@ export default function POS() {
   const [customerPhone, setCustomerPhone] = useState("");
   const [customerEmail, setCustomerEmail] = useState("");
   const [customerAddress, setCustomerAddress] = useState("");
+  const [customerRank, setCustomerRank] = useState("standard");
   const [customers, setCustomers] = useState<any[]>([]);
   const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
   const { toast } = useToast();
@@ -90,6 +91,7 @@ export default function POS() {
     setCustomerPhone(customer.phone || "");
     setCustomerEmail(customer.email || "");
     setCustomerAddress(customer.address || "");
+    setCustomerRank(customer.rank || "standard");
     setShowCustomerSuggestions(false);
   };
 
@@ -173,6 +175,7 @@ export default function POS() {
             phone: customerPhone || existingCustomer.phone,
             email: customerEmail || existingCustomer.email,
             address: customerAddress || existingCustomer.address,
+            rank: customerRank,
           })
           .eq("id", existingCustomer.id)
           .select()
@@ -189,6 +192,7 @@ export default function POS() {
             phone: customerPhone,
             email: customerEmail,
             address: customerAddress,
+            rank: customerRank,
           })
           .select()
           .single();
@@ -267,6 +271,7 @@ export default function POS() {
     setCustomerPhone("");
     setCustomerEmail("");
     setCustomerAddress("");
+    setCustomerRank("standard");
   };
 
   if (showReceipt && currentTransaction) {
@@ -406,6 +411,20 @@ export default function POS() {
                     onChange={(e) => setCustomerPhone(e.target.value)}
                     className="border-2 focus:border-primary"
                   />
+                  <div className="space-y-2">
+                    <Label className="text-sm">แรงค์ลูกค้า</Label>
+                    <select
+                      value={customerRank}
+                      onChange={(e) => setCustomerRank(e.target.value)}
+                      className="w-full h-10 px-3 border-2 rounded-md focus:border-primary bg-background"
+                    >
+                      <option value="standard">ทั่วไป</option>
+                      <option value="silver">เงิน</option>
+                      <option value="gold">ทอง</option>
+                      <option value="platinum">แพลทินัม</option>
+                      <option value="vip">VIP</option>
+                    </select>
+                  </div>
                 </div>
                 {cart.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">

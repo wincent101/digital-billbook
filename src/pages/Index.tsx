@@ -12,6 +12,7 @@ const Index = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [businessName, setBusinessName] = useState("ชื่อร้านของคุณ");
   const [logoUrl, setLogoUrl] = useState<string>("");
+  const [signatureUrl, setSignatureUrl] = useState<string>("");
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
 
@@ -61,6 +62,7 @@ const Index = () => {
       if (data) {
         setBusinessName(data.business_name);
         setLogoUrl(data.logo_url || "");
+        setSignatureUrl(data.signature_url || "");
       }
     } catch (error) {
       console.error("Load business settings error:", error);
@@ -157,7 +159,7 @@ const Index = () => {
           </TabsList>
 
           <TabsContent value="create">
-            <InvoiceForm businessName={businessName} logoUrl={logoUrl} />
+            <InvoiceForm businessName={businessName} logoUrl={logoUrl} signatureUrl={signatureUrl} />
           </TabsContent>
 
           <TabsContent value="history">

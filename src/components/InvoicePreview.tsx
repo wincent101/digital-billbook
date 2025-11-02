@@ -10,6 +10,7 @@ interface InvoicePreviewProps {
   customerCode: string;
   businessName: string;
   logoUrl?: string;
+  signatureUrl?: string;
   fileUrl?: string;
   createdAt?: Date;
 }
@@ -21,6 +22,7 @@ export const InvoicePreview = ({
   customerCode,
   businessName,
   logoUrl,
+  signatureUrl,
   fileUrl,
   createdAt = new Date(),
 }: InvoicePreviewProps) => {
@@ -182,7 +184,16 @@ export const InvoicePreview = ({
             </div>
             <div className="text-center">
               <div className="h-20 border-b-2 border-border mb-3 flex items-center justify-center">
-                <div className="text-primary/20 text-6xl font-bold">✓</div>
+                {signatureUrl ? (
+                  <img
+                    src={signatureUrl}
+                    alt="Signature"
+                    className="max-h-16 object-contain"
+                    crossOrigin="anonymous"
+                  />
+                ) : (
+                  <div className="text-primary/20 text-6xl font-bold">✓</div>
+                )}
               </div>
               <p className="text-sm font-semibold text-foreground">{businessName}</p>
               <p className="text-xs text-muted-foreground mt-1">Authorized Signature</p>

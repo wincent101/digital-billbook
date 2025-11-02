@@ -16,6 +16,8 @@ export const SettingsPage = ({ onBack }: SettingsPageProps) => {
   const [phoneNumber, setPhoneNumber] = useState("");
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoUrl, setLogoUrl] = useState<string>("");
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [signatureUrl, setSignatureUrl] = useState<string>("");
   const [settingsId, setSettingsId] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -39,6 +41,7 @@ export const SettingsPage = ({ onBack }: SettingsPageProps) => {
         setBusinessName(data.business_name);
         setPhoneNumber(data.phone_number || "");
         setLogoUrl(data.logo_url || "");
+        setSignatureUrl(data.signature_url || "");
         setSettingsId(data.id);
       }
     } catch (error) {
@@ -77,6 +80,34 @@ export const SettingsPage = ({ onBack }: SettingsPageProps) => {
     }
   };
 
+  const handleSignatureChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setSignatureFile(file);
+
+      try {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `signature-${Date.now()}.${fileExt}`;
+
+        const { data, error } = await supabase.storage
+          .from("invoice-files")
+          .upload(fileName, file);
+
+        if (error) throw error;
+
+        const {
+          data: { publicUrl },
+        } = supabase.storage.from("invoice-files").getPublicUrl(fileName);
+
+        setSignatureUrl(publicUrl);
+        toast.success("อัปโหลดลายเซ็นสำเร็จ!");
+      } catch (error) {
+        console.error("Signature upload error:", error);
+        toast.error("เกิดข้อผิดพลาดในการอัปโหลดลายเซ็น");
+      }
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
@@ -87,6 +118,7 @@ export const SettingsPage = ({ onBack }: SettingsPageProps) => {
             business_name: businessName,
             phone_number: phoneNumber,
             logo_url: logoUrl,
+            signature_url: signatureUrl,
           })
           .eq("id", settingsId);
 
@@ -96,6 +128,7 @@ export const SettingsPage = ({ onBack }: SettingsPageProps) => {
           business_name: businessName,
           phone_number: phoneNumber,
           logo_url: logoUrl,
+          signature_url: signatureUrl,
         });
 
         if (error) throw error;
@@ -190,6 +223,44 @@ export const SettingsPage = ({ onBack }: SettingsPageProps) => {
                 {logoFile && (
                   <p className="text-sm text-muted-foreground">
                     ไฟล์: {logoFile.name}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <Label htmlFor="signature" className="text-lg font-semibold">
+                ลายเซ็นร้าน
+              </Label>
+              <div className="flex flex-col gap-4">
+                {signatureUrl && (
+                  <div className="flex justify-center p-6 bg-gradient-to-br from-muted/30 to-background rounded-xl border-2 border-dashed border-secondary/20">
+                    <img
+                      src={signatureUrl}
+                      alt="Signature Preview"
+                      className="max-h-24 object-contain rounded-lg shadow-md"
+                    />
+                  </div>
+                )}
+                <div className="flex gap-3">
+                  <Input
+                    id="signature"
+                    type="file"
+                    accept="image/*"
+                    onChange={handleSignatureChange}
+                    disabled={isLoading}
+                    className="flex-1 border-2 focus:border-secondary transition-all"
+                  />
+                  <Button
+                    variant="outline"
+                    className="border-2 hover:border-secondary"
+                  >
+                    <Upload className="h-4 w-4" />
+                  </Button>
+                </div>
+                {signatureFile && (
+                  <p className="text-sm text-muted-foreground">
+                    ไฟล์: {signatureFile.name}
                   </p>
                 )}
               </div>

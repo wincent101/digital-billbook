@@ -13,9 +13,10 @@ import { InvoicePreview } from "./InvoicePreview";
 interface InvoiceFormProps {
   businessName: string;
   logoUrl?: string;
+  signatureUrl?: string;
 }
 
-export const InvoiceForm = ({ businessName, logoUrl }: InvoiceFormProps) => {
+export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceFormProps) => {
   const location = useLocation();
   const [invoiceNumber, setInvoiceNumber] = useState(`INV-${Date.now()}`);
   const [referenceNumber, setReferenceNumber] = useState(`REF-${Date.now()}`);
@@ -288,6 +289,7 @@ export const InvoiceForm = ({ businessName, logoUrl }: InvoiceFormProps) => {
           customerCode={customerCode || "รหัสลูกค้า"}
           businessName={businessName}
           logoUrl={logoUrl}
+          signatureUrl={signatureUrl}
           fileUrl={fileUrl}
         />
       </div>
