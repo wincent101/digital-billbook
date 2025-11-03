@@ -68,10 +68,28 @@ export const PaymentReceipt = ({ transaction, onClose }: PaymentReceiptProps) =>
     }
   };
 
+  const waitForImagesToLoad = async (element: HTMLElement) => {
+    const images = element.querySelectorAll('img');
+    const imagePromises = Array.from(images).map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise((resolve) => {
+        img.onload = resolve;
+        img.onerror = resolve; // Resolve even on error to not block
+      });
+    });
+    await Promise.all(imagePromises);
+  };
+
   const downloadReceipt = async () => {
     if (!receiptRef.current) return;
 
     try {
+      // รอให้ images ทั้งหมดโหลดเสร็จก่อน
+      await waitForImagesToLoad(receiptRef.current);
+      
+      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่า QR code render เสร็จ
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const canvas = await html2canvas(receiptRef.current, {
         scale: 2,
         backgroundColor: "#ffffff",

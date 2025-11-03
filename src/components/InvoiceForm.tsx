@@ -128,11 +128,29 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
     }
   };
 
+  const waitForImagesToLoad = async (element: HTMLElement) => {
+    const images = element.querySelectorAll('img');
+    const imagePromises = Array.from(images).map((img) => {
+      if (img.complete) return Promise.resolve();
+      return new Promise((resolve, reject) => {
+        img.onload = resolve;
+        img.onerror = resolve; // Resolve even on error to not block
+      });
+    });
+    await Promise.all(imagePromises);
+  };
+
   const handleDownloadPNG = async () => {
     const element = document.getElementById("invoice-preview");
     if (!element) return;
 
     try {
+      // รอให้ images ทั้งหมดโหลดเสร็จก่อน
+      await waitForImagesToLoad(element);
+      
+      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่า QR code render เสร็จ
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const canvas = await html2canvas(element, {
         scale: 2,
         backgroundColor: "#ffffff",
@@ -158,6 +176,12 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
     if (!element) return;
 
     try {
+      // รอให้ images ทั้งหมดโหลดเสร็จก่อน
+      await waitForImagesToLoad(element);
+      
+      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่า QR code render เสร็จ
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const canvas = await html2canvas(element, {
         scale: 2,
         backgroundColor: "#ffffff",
