@@ -22,6 +22,7 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
   const [referenceNumber, setReferenceNumber] = useState(`REF-${Date.now()}`);
   const [customerName, setCustomerName] = useState("");
   const [customerCode, setCustomerCode] = useState("");
+  const [customerRank, setCustomerRank] = useState("standard");
   const [file, setFile] = useState<File | null>(null);
   const [fileUrl, setFileUrl] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
@@ -51,6 +52,7 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
           if (customer) {
             setCustomerName(customer.name);
             setCustomerCode(customer.phone || customer.id);
+            setCustomerRank(customer.rank || "standard");
           }
         }
       }
@@ -287,6 +289,7 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
           referenceNumber={referenceNumber}
           customerName={customerName || "ชื่อลูกค้า"}
           customerCode={customerCode || "รหัสลูกค้า"}
+          customerRank={customerRank}
           businessName={businessName}
           logoUrl={logoUrl}
           signatureUrl={signatureUrl}

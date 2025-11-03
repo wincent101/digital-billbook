@@ -31,8 +31,10 @@ interface Transaction {
   transaction_number: string;
   total_amount: number;
   payment_status: string;
+  delivery_status: string;
   created_at: string;
   qr_code_data: string | null;
+  customer_id: string | null;
 }
 
 export const TransactionHistory = () => {
@@ -101,12 +103,12 @@ export const TransactionHistory = () => {
   const handleViewReceipt = async (transaction: Transaction) => {
     try {
       // โหลดรายการสินค้า
-      const { data: items, error } = await supabase
+      const { data: items, error: itemsError } = await supabase
         .from("transaction_items")
         .select("*")
         .eq("transaction_id", transaction.id);
 
-      if (error) throw error;
+      if (itemsError) throw itemsError;
 
       const itemsFormatted = items?.map((item) => ({
         id: item.product_id,
@@ -115,9 +117,27 @@ export const TransactionHistory = () => {
         quantity: item.quantity,
       }));
 
+      // โหลดข้อมูลลูกค้า
+      let customerName = null;
+      let customerRank = null;
+      if (transaction.customer_id) {
+        const { data: customer, error: customerError } = await supabase
+          .from("customers")
+          .select("name, rank")
+          .eq("id", transaction.customer_id)
+          .maybeSingle();
+
+        if (!customerError && customer) {
+          customerName = customer.name;
+          customerRank = customer.rank;
+        }
+      }
+
       setViewTransaction({
         ...transaction,
         items: itemsFormatted,
+        customer_name: customerName,
+        customer_rank: customerRank,
       });
     } catch (error) {
       console.error("View receipt error:", error);
@@ -129,7 +149,7 @@ export const TransactionHistory = () => {
     }
   };
 
-  const getStatusBadge = (status: string) => {
+  const getPaymentStatusBadge = (status: string) => {
     const variants: Record<string, "default" | "secondary" | "destructive"> = {
       pending: "secondary",
       paid: "default",
@@ -145,6 +165,51 @@ export const TransactionHistory = () => {
     return (
       <Badge variant={variants[status] || "default"}>{labels[status] || status}</Badge>
     );
+  };
+
+  const getDeliveryStatusBadge = (status: string) => {
+    const variants: Record<string, "default" | "secondary"> = {
+      pending: "secondary",
+      delivered: "default",
+    };
+
+    const labels: Record<string, string> = {
+      pending: "รอส่งงาน",
+      delivered: "ส่งแล้ว",
+    };
+
+    return (
+      <Badge variant={variants[status] || "default"}>{labels[status] || status}</Badge>
+    );
+  };
+
+  const handleUpdateStatus = async (
+    transactionId: string,
+    statusType: "payment_status" | "delivery_status",
+    newStatus: string
+  ) => {
+    try {
+      const { error } = await supabase
+        .from("pos_transactions")
+        .update({ [statusType]: newStatus })
+        .eq("id", transactionId);
+
+      if (error) throw error;
+
+      toast({
+        title: "สำเร็จ",
+        description: "อัปเดตสถานะเรียบร้อยแล้ว",
+      });
+
+      loadTransactions();
+    } catch (error) {
+      console.error("Update status error:", error);
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: "ไม่สามารถอัปเดตสถานะได้",
+        variant: "destructive",
+      });
+    }
   };
 
   if (viewTransaction) {
@@ -224,7 +289,8 @@ export const TransactionHistory = () => {
                     <TableHead>เลขที่รายการ</TableHead>
                     <TableHead>วันที่/เวลา</TableHead>
                     <TableHead className="text-right">จำนวนเงิน</TableHead>
-                    <TableHead>สถานะ</TableHead>
+                    <TableHead>สถานะการชำระ</TableHead>
+                    <TableHead>สถานะการส่ง</TableHead>
                     <TableHead className="text-right">จัดการ</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -246,7 +312,48 @@ export const TransactionHistory = () => {
                       <TableCell className="text-right font-semibold">
                         ฿{Number(transaction.total_amount).toFixed(2)}
                       </TableCell>
-                      <TableCell>{getStatusBadge(transaction.payment_status)}</TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          {getPaymentStatusBadge(transaction.payment_status)}
+                          {transaction.payment_status === "pending" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-6"
+                              onClick={() =>
+                                handleUpdateStatus(
+                                  transaction.id,
+                                  "payment_status",
+                                  "paid"
+                                )
+                              }
+                            >
+                              ชำระแล้ว
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex flex-col gap-1">
+                          {getDeliveryStatusBadge(transaction.delivery_status)}
+                          {transaction.delivery_status === "pending" && (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-xs h-6"
+                              onClick={() =>
+                                handleUpdateStatus(
+                                  transaction.id,
+                                  "delivery_status",
+                                  "delivered"
+                                )
+                              }
+                            >
+                              ส่งแล้ว
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex gap-2 justify-end">
                           <Button

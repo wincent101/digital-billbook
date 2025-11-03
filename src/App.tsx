@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Admin from "./pages/Admin";
 import POS from "./pages/POS";
 import { TransactionHistory } from "./components/TransactionHistory";
+import { CustomerManagement } from "./components/CustomerManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/pos" element={<POS />} />
           <Route path="/pos/history" element={<TransactionHistory />} />
+          <Route path="/customers" element={<CustomerManagement />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

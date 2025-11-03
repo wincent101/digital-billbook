@@ -2,12 +2,14 @@ import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import QRCode from "qrcode";
 import { useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
 
 interface InvoicePreviewProps {
   invoiceNumber: string;
   referenceNumber: string;
   customerName: string;
   customerCode: string;
+  customerRank?: string;
   businessName: string;
   logoUrl?: string;
   signatureUrl?: string;
@@ -20,6 +22,7 @@ export const InvoicePreview = ({
   referenceNumber,
   customerName,
   customerCode,
+  customerRank = "standard",
   businessName,
   logoUrl,
   signatureUrl,
@@ -128,6 +131,13 @@ export const InvoicePreview = ({
                 Customer Name
               </p>
               <p className="text-xl font-semibold text-foreground">{customerName}</p>
+              {customerRank && customerRank !== "standard" && (
+                <div className="mt-2">
+                  <Badge className="bg-gradient-to-r from-yellow-400 to-yellow-600 text-white">
+                    {customerRank.toUpperCase()}
+                  </Badge>
+                </div>
+              )}
             </div>
             <div className="bg-gradient-to-br from-muted to-muted/50 p-5 rounded-lg border-l-4 border-border shadow-sm">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">

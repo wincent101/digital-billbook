@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, History, LogOut, Shield, ShoppingCart } from "lucide-react";
+import { Settings, FileText, History, LogOut, Shield, ShoppingCart, Users } from "lucide-react";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import { SettingsPage } from "@/components/SettingsPage";
 import { InvoiceHistory } from "@/components/InvoiceHistory";
@@ -103,6 +103,14 @@ const Index = () => {
               >
                 <ShoppingCart className="h-4 w-4" />
                 ขายหน้าร้าน (POS)
+              </Button>
+              <Button
+                onClick={() => navigate("/customers")}
+                variant="outline"
+                className="gap-2"
+              >
+                <Users className="h-4 w-4" />
+                จัดการลูกค้า
               </Button>
               {isAdmin && (
                 <Button

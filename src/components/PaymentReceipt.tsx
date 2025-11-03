@@ -12,6 +12,17 @@ interface PaymentReceiptProps {
   onClose: () => void;
 }
 
+const getRankBadge = (rank: string) => {
+  const colors: Record<string, string> = {
+    standard: "bg-gray-500",
+    silver: "bg-slate-400",
+    gold: "bg-yellow-500",
+    platinum: "bg-purple-500",
+    vip: "bg-gradient-to-r from-purple-600 to-pink-600",
+  };
+  return colors[rank] || colors.standard;
+};
+
 export const PaymentReceipt = ({ transaction, onClose }: PaymentReceiptProps) => {
   const receiptRef = useRef<HTMLDivElement>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
@@ -149,6 +160,19 @@ export const PaymentReceipt = ({ transaction, onClose }: PaymentReceiptProps) =>
                   </p>
                 </div>
               </div>
+              {transaction.customer_name && (
+                <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-500 mb-1">ชื่อลูกค้า:</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-semibold text-lg">{transaction.customer_name}</p>
+                    {transaction.customer_rank && transaction.customer_rank !== "standard" && (
+                      <span className={`px-3 py-1 rounded-full text-xs font-bold text-white ${getRankBadge(transaction.customer_rank)}`}>
+                        {transaction.customer_rank.toUpperCase()}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Items */}
