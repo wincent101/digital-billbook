@@ -46,24 +46,47 @@ export const TransactionHistory = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadTransactions();
+    checkAuthAndLoad();
   }, []);
+
+  const checkAuthAndLoad = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      console.log("No session found, redirecting to auth");
+      navigate("/auth");
+      return;
+    }
+    
+    await loadTransactions();
+  };
 
   const loadTransactions = async () => {
     try {
       setLoading(true);
+      console.log("Loading transactions...");
+      
+      // ตรวจสอบ session ก่อน
+      const { data: sessionData } = await supabase.auth.getSession();
+      console.log("Session:", sessionData.session ? "Active" : "No session");
+      
       const { data, error } = await supabase
         .from("pos_transactions")
         .select("*")
         .order("created_at", { ascending: false });
 
-      if (error) throw error;
+      console.log("Transactions loaded:", data?.length || 0, "records");
+      if (error) {
+        console.error("Query error:", error);
+        throw error;
+      }
+      
       setTransactions(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Load transactions error:", error);
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: "ไม่สามารถโหลดประวัติการทำรายการได้",
+        description: error.message || "ไม่สามารถโหลดประวัติการทำรายการได้",
         variant: "destructive",
       });
     } finally {
