@@ -88,13 +88,20 @@ export const PaymentReceipt = ({ transaction, onClose }: PaymentReceiptProps) =>
       await waitForImagesToLoad(receiptRef.current);
       
       // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่า QR code render เสร็จ
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const canvas = await html2canvas(receiptRef.current, {
         scale: 2,
         backgroundColor: "#ffffff",
         useCORS: true,
         allowTaint: true,
+        imageTimeout: 15000,
+        onclone: (clonedDoc) => {
+          const clonedElement = clonedDoc.querySelector('[class*="bg-white p-8 rounded-lg shadow-lg"]');
+          if (clonedElement) {
+            (clonedElement as HTMLElement).style.display = "block";
+          }
+        },
       });
 
       const imageUrl = canvas.toDataURL("image/png");
