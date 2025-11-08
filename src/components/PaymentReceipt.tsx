@@ -6,6 +6,7 @@ import { Download, X } from "lucide-react";
 import html2canvas from "html2canvas";
 import QRCode from "qrcode";
 import { useToast } from "@/hooks/use-toast";
+import { convertQRImagesToBase64 } from "@/lib/utils";
 
 interface PaymentReceiptProps {
   transaction: any;
@@ -88,18 +89,20 @@ export const PaymentReceipt = ({ transaction, onClose }: PaymentReceiptProps) =>
       await waitForImagesToLoad(receiptRef.current);
       
       // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่า QR code render เสร็จ
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(receiptRef.current, {
         scale: 2,
         backgroundColor: "#ffffff",
         useCORS: true,
         allowTaint: true,
-        imageTimeout: 15000,
-        onclone: (clonedDoc) => {
-          const clonedElement = clonedDoc.querySelector('[class*="bg-white p-8 rounded-lg shadow-lg"]');
+        imageTimeout: 0,
+        onclone: async (clonedDoc) => {
+          const clonedElement = clonedDoc.querySelector('[class*="bg-white p-8 rounded-lg shadow-lg"]') as HTMLElement;
           if (clonedElement) {
-            (clonedElement as HTMLElement).style.display = "block";
+            clonedElement.style.display = "block";
+            // แปลง QR code images เป็น base64 ก่อน render
+            await convertQRImagesToBase64(clonedElement);
           }
         },
       });

@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { InvoicePreview } from "./InvoicePreview";
+import { convertQRImagesToBase64 } from "@/lib/utils";
 
 interface InvoiceFormProps {
   businessName: string;
@@ -149,7 +150,7 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
       await waitForImagesToLoad(element);
       
       // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่า QR code render เสร็จ
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -157,11 +158,13 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
         useCORS: true,
         allowTaint: true,
         logging: false,
-        imageTimeout: 15000,
-        onclone: (clonedDoc) => {
+        imageTimeout: 0,
+        onclone: async (clonedDoc) => {
           const clonedElement = clonedDoc.getElementById("invoice-preview");
           if (clonedElement) {
             clonedElement.style.display = "block";
+            // แปลง QR code images เป็น base64 ก่อน render
+            await convertQRImagesToBase64(clonedElement);
           }
         },
       });
@@ -187,7 +190,7 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
       await waitForImagesToLoad(element);
       
       // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่า QR code render เสร็จ
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 500));
 
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -195,11 +198,13 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
         useCORS: true,
         allowTaint: true,
         logging: false,
-        imageTimeout: 15000,
-        onclone: (clonedDoc) => {
+        imageTimeout: 0,
+        onclone: async (clonedDoc) => {
           const clonedElement = clonedDoc.getElementById("invoice-preview");
           if (clonedElement) {
             clonedElement.style.display = "block";
+            // แปลง QR code images เป็น base64 ก่อน render
+            await convertQRImagesToBase64(clonedElement);
           }
         },
       });
