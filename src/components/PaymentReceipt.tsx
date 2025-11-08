@@ -85,27 +85,29 @@ export const PaymentReceipt = ({ transaction, onClose }: PaymentReceiptProps) =>
     if (!receiptRef.current) return;
 
     try {
+      console.log('Starting receipt download...');
+      
       // รอให้ images ทั้งหมดโหลดเสร็จก่อน
       await waitForImagesToLoad(receiptRef.current);
+      console.log('Images loaded');
       
-      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่า QR code render เสร็จ
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // แปลง QR code เป็น base64 ก่อนเรียก html2canvas
+      await convertQRImagesToBase64(receiptRef.current);
+      console.log('QR codes converted to base64');
+      
+      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่าการแปลงเสร็จสิ้น
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const canvas = await html2canvas(receiptRef.current, {
-        scale: 2,
+        scale: 3,
         backgroundColor: "#ffffff",
         useCORS: true,
         allowTaint: true,
         imageTimeout: 0,
-        onclone: async (clonedDoc) => {
-          const clonedElement = clonedDoc.querySelector('[class*="bg-white p-8 rounded-lg shadow-lg"]') as HTMLElement;
-          if (clonedElement) {
-            clonedElement.style.display = "block";
-            // แปลง QR code images เป็น base64 ก่อน render
-            await convertQRImagesToBase64(clonedElement);
-          }
-        },
+        logging: true,
       });
+      
+      console.log('Canvas created');
 
       const imageUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");

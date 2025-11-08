@@ -37,23 +37,53 @@ export async function convertImageToBase64(img: HTMLImageElement): Promise<strin
  */
 export async function convertQRImagesToBase64(element: HTMLElement): Promise<void> {
   const images = element.querySelectorAll('img');
-  const promises = Array.from(images).map(async (img) => {
+  console.log(`Found ${images.length} images to convert`);
+  
+  for (const img of Array.from(images)) {
     try {
+      // บันทึก src เดิมไว้เพื่อเช็ค
+      const originalSrc = img.src;
+      console.log(`Converting image: ${originalSrc.substring(0, 50)}...`);
+      
       // รอให้ image โหลดเสร็จก่อน (ถ้ายังไม่เสร็จ)
       if (!img.complete) {
-        await new Promise((resolve) => {
-          img.onload = resolve;
-          img.onerror = resolve;
+        console.log('Image not complete, waiting...');
+        await new Promise<void>((resolve) => {
+          img.onload = () => {
+            console.log('Image loaded');
+            resolve();
+          };
+          img.onerror = () => {
+            console.log('Image error, but continuing');
+            resolve();
+          };
+          // Timeout fallback
+          setTimeout(() => {
+            console.log('Image load timeout');
+            resolve();
+          }, 5000);
         });
       }
 
+      // ถ้าเป็น data URL อยู่แล้ว และเป็น base64 ก็ข้ามไป
+      if (originalSrc.startsWith('data:image')) {
+        console.log('Image is already a data URL, skipping conversion');
+        continue;
+      }
+
       // แปลงเป็น base64
+      console.log('Converting to base64...');
       const base64 = await convertImageToBase64(img);
       img.src = base64;
+      
+      // ตั้งค่า crossOrigin
+      img.crossOrigin = 'anonymous';
+      
+      console.log(`Conversion complete: ${base64.substring(0, 50)}...`);
     } catch (error) {
       console.error('Error converting image to base64:', error);
     }
-  });
+  }
   
-  await Promise.all(promises);
+  console.log('All images converted');
 }

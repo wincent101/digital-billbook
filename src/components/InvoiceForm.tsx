@@ -146,28 +146,29 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
     if (!element) return;
 
     try {
+      console.log('Starting PNG download...');
+      
       // รอให้ images ทั้งหมดโหลดเสร็จก่อน
       await waitForImagesToLoad(element);
+      console.log('Images loaded');
       
-      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่า QR code render เสร็จ
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // แปลง QR code เป็น base64 ก่อนเรียก html2canvas
+      await convertQRImagesToBase64(element);
+      console.log('QR codes converted to base64');
+      
+      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่าการแปลงเสร็จสิ้น
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         backgroundColor: "#ffffff",
         useCORS: true,
         allowTaint: true,
-        logging: false,
+        logging: true,
         imageTimeout: 0,
-        onclone: async (clonedDoc) => {
-          const clonedElement = clonedDoc.getElementById("invoice-preview");
-          if (clonedElement) {
-            clonedElement.style.display = "block";
-            // แปลง QR code images เป็น base64 ก่อน render
-            await convertQRImagesToBase64(clonedElement);
-          }
-        },
       });
+      
+      console.log('PNG canvas created');
       
       const link = document.createElement("a");
       link.download = `invoice-${invoiceNumber}.png`;
@@ -186,28 +187,29 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
     if (!element) return;
 
     try {
+      console.log('Starting JPG download...');
+      
       // รอให้ images ทั้งหมดโหลดเสร็จก่อน
       await waitForImagesToLoad(element);
+      console.log('Images loaded');
       
-      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่า QR code render เสร็จ
-      await new Promise(resolve => setTimeout(resolve, 500));
+      // แปลง QR code เป็น base64 ก่อนเรียก html2canvas
+      await convertQRImagesToBase64(element);
+      console.log('QR codes converted to base64');
+      
+      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่าการแปลงเสร็จสิ้น
+      await new Promise(resolve => setTimeout(resolve, 1000));
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         backgroundColor: "#ffffff",
         useCORS: true,
         allowTaint: true,
-        logging: false,
+        logging: true,
         imageTimeout: 0,
-        onclone: async (clonedDoc) => {
-          const clonedElement = clonedDoc.getElementById("invoice-preview");
-          if (clonedElement) {
-            clonedElement.style.display = "block";
-            // แปลง QR code images เป็น base64 ก่อน render
-            await convertQRImagesToBase64(clonedElement);
-          }
-        },
       });
+      
+      console.log('JPG canvas created');
       
       const link = document.createElement("a");
       link.download = `invoice-${invoiceNumber}.jpg`;
