@@ -1,1 +1,4 @@
 project_id = "ecojmjljvtqkyekqxvxl"
+
+[functions.cleanup-old-files]
+verify_jwt = false
