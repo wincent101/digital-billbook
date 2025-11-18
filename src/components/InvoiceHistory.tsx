@@ -58,7 +58,8 @@ export const InvoiceHistory = ({ businessName, logoUrl }: InvoiceHistoryProps) =
       const { data, error } = await supabase
         .from("invoices")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(100);
 
       if (error) throw error;
       setInvoices(data || []);
@@ -128,12 +129,27 @@ export const InvoiceHistory = ({ businessName, logoUrl }: InvoiceHistoryProps) =
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <FileText className="h-12 w-12 mx-auto mb-4 text-primary animate-pulse" />
-          <p className="text-muted-foreground">กำลังโหลดข้อมูล...</p>
-        </div>
-      </div>
+      <Card className="shadow-[var(--shadow-soft)] border-2 border-primary/10">
+        <CardHeader className="bg-gradient-to-r from-primary/5 to-accent/5 border-b border-border/50">
+          <CardTitle className="text-2xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            ประวัติใบเสร็จ
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-4 p-4 border rounded-lg animate-pulse">
+                <div className="h-12 w-12 bg-muted rounded" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-32 bg-muted rounded" />
+                  <div className="h-3 w-48 bg-muted rounded" />
+                </div>
+                <div className="h-8 w-24 bg-muted rounded" />
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
