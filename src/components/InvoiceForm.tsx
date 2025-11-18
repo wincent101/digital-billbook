@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import html2canvas from "html2canvas";
 import { InvoicePreview } from "./InvoicePreview";
-import { convertQRImagesToBase64 } from "@/lib/utils";
 
 interface InvoiceFormProps {
   businessName: string;
@@ -129,46 +128,41 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
     }
   };
 
-  const waitForImagesToLoad = async (element: HTMLElement) => {
-    const images = element.querySelectorAll('img');
-    const imagePromises = Array.from(images).map((img) => {
-      if (img.complete) return Promise.resolve();
-      return new Promise((resolve, reject) => {
-        img.onload = resolve;
-        img.onerror = resolve; // Resolve even on error to not block
-      });
-    });
-    await Promise.all(imagePromises);
-  };
-
   const handleDownloadPNG = async () => {
     const element = document.getElementById("invoice-preview");
     if (!element) return;
 
     try {
-      console.log('Starting PNG download...');
-      
-      // รอให้ images ทั้งหมดโหลดเสร็จก่อน
-      await waitForImagesToLoad(element);
-      console.log('Images loaded');
-      
-      // แปลง QR code เป็น base64 ก่อนเรียก html2canvas
-      await convertQRImagesToBase64(element);
-      console.log('QR codes converted to base64');
-      
-      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่าการแปลงเสร็จสิ้น
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       const canvas = await html2canvas(element, {
         scale: 3,
         backgroundColor: "#ffffff",
         useCORS: true,
-        allowTaint: true,
-        logging: true,
+        allowTaint: false,
         imageTimeout: 0,
+        onclone: async (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById("invoice-preview");
+          if (!clonedElement) return;
+          
+          const images = clonedElement.querySelectorAll('img');
+          for (const img of Array.from(images)) {
+            const originalSrc = img.getAttribute('src');
+            if (originalSrc && !originalSrc.startsWith('data:')) {
+              try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth || img.width;
+                canvas.height = img.naturalHeight || img.height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(img, 0, 0);
+                  img.src = canvas.toDataURL('image/png');
+                }
+              } catch (e) {
+                console.warn('Could not convert image:', e);
+              }
+            }
+          }
+        }
       });
-      
-      console.log('PNG canvas created');
       
       const link = document.createElement("a");
       link.download = `invoice-${invoiceNumber}.png`;
@@ -187,29 +181,36 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
     if (!element) return;
 
     try {
-      console.log('Starting JPG download...');
-      
-      // รอให้ images ทั้งหมดโหลดเสร็จก่อน
-      await waitForImagesToLoad(element);
-      console.log('Images loaded');
-      
-      // แปลง QR code เป็น base64 ก่อนเรียก html2canvas
-      await convertQRImagesToBase64(element);
-      console.log('QR codes converted to base64');
-      
-      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่าการแปลงเสร็จสิ้น
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       const canvas = await html2canvas(element, {
         scale: 3,
         backgroundColor: "#ffffff",
         useCORS: true,
-        allowTaint: true,
-        logging: true,
+        allowTaint: false,
         imageTimeout: 0,
+        onclone: async (clonedDoc) => {
+          const clonedElement = clonedDoc.getElementById("invoice-preview");
+          if (!clonedElement) return;
+          
+          const images = clonedElement.querySelectorAll('img');
+          for (const img of Array.from(images)) {
+            const originalSrc = img.getAttribute('src');
+            if (originalSrc && !originalSrc.startsWith('data:')) {
+              try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth || img.width;
+                canvas.height = img.naturalHeight || img.height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(img, 0, 0);
+                  img.src = canvas.toDataURL('image/png');
+                }
+              } catch (e) {
+                console.warn('Could not convert image:', e);
+              }
+            }
+          }
+        }
       });
-      
-      console.log('JPG canvas created');
       
       const link = document.createElement("a");
       link.download = `invoice-${invoiceNumber}.jpg`;

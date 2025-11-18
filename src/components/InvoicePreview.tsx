@@ -158,6 +158,7 @@ export const InvoicePreview = ({
                     src={qrCodeUrl}
                     alt="QR Code"
                     className="w-32 h-32"
+                    crossOrigin="anonymous"
                   />
                 </div>
                 <div className="mt-4">
