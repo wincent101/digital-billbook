@@ -64,22 +64,14 @@ export const TransactionHistory = () => {
   const loadTransactions = async () => {
     try {
       setLoading(true);
-      console.log("Loading transactions...");
-      
-      // ตรวจสอบ session ก่อน
-      const { data: sessionData } = await supabase.auth.getSession();
-      console.log("Session:", sessionData.session ? "Active" : "No session");
       
       const { data, error } = await supabase
         .from("pos_transactions")
         .select("*")
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false })
+        .limit(100);
 
-      console.log("Transactions loaded:", data?.length || 0, "records");
-      if (error) {
-        console.error("Query error:", error);
-        throw error;
-      }
+      if (error) throw error;
       
       setTransactions(data || []);
     } catch (error: any) {
@@ -293,11 +285,20 @@ export const TransactionHistory = () => {
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="flex flex-col items-center gap-4">
-                <FileText className="h-12 w-12 text-muted-foreground animate-pulse" />
-                <p className="text-muted-foreground">กำลังโหลด...</p>
-              </div>
+            <div className="space-y-4">
+              {[1, 2, 3, 4, 5].map((i) => (
+                <div key={i} className="flex items-center gap-4 p-4 border rounded-lg animate-pulse">
+                  <div className="h-12 w-12 bg-muted rounded" />
+                  <div className="flex-1 space-y-2">
+                    <div className="h-4 w-32 bg-muted rounded" />
+                    <div className="h-3 w-48 bg-muted rounded" />
+                  </div>
+                  <div className="flex gap-2">
+                    <div className="h-8 w-20 bg-muted rounded" />
+                    <div className="h-8 w-20 bg-muted rounded" />
+                  </div>
+                </div>
+              ))}
             </div>
           ) : transactions.length === 0 ? (
             <div className="text-center py-12">
