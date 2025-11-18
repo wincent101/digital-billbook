@@ -6,7 +6,6 @@ import { Download, X } from "lucide-react";
 import html2canvas from "html2canvas";
 import QRCode from "qrcode";
 import { useToast } from "@/hooks/use-toast";
-import { convertQRImagesToBase64 } from "@/lib/utils";
 
 interface PaymentReceiptProps {
   transaction: any;
@@ -69,45 +68,40 @@ export const PaymentReceipt = ({ transaction, onClose }: PaymentReceiptProps) =>
     }
   };
 
-  const waitForImagesToLoad = async (element: HTMLElement) => {
-    const images = element.querySelectorAll('img');
-    const imagePromises = Array.from(images).map((img) => {
-      if (img.complete) return Promise.resolve();
-      return new Promise((resolve) => {
-        img.onload = resolve;
-        img.onerror = resolve; // Resolve even on error to not block
-      });
-    });
-    await Promise.all(imagePromises);
-  };
-
   const downloadReceipt = async () => {
     if (!receiptRef.current) return;
 
     try {
-      console.log('Starting receipt download...');
-      
-      // รอให้ images ทั้งหมดโหลดเสร็จก่อน
-      await waitForImagesToLoad(receiptRef.current);
-      console.log('Images loaded');
-      
-      // แปลง QR code เป็น base64 ก่อนเรียก html2canvas
-      await convertQRImagesToBase64(receiptRef.current);
-      console.log('QR codes converted to base64');
-      
-      // รอเพิ่มอีกนิดเพื่อให้แน่ใจว่าการแปลงเสร็จสิ้น
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
       const canvas = await html2canvas(receiptRef.current, {
         scale: 3,
         backgroundColor: "#ffffff",
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
         imageTimeout: 0,
-        logging: true,
+        onclone: async (clonedDoc) => {
+          const clonedElement = clonedDoc.body.querySelector('[data-receipt]');
+          if (!clonedElement) return;
+          
+          const images = clonedElement.querySelectorAll('img');
+          for (const img of Array.from(images)) {
+            const originalSrc = img.getAttribute('src');
+            if (originalSrc && !originalSrc.startsWith('data:')) {
+              try {
+                const canvas = document.createElement('canvas');
+                canvas.width = img.naturalWidth || img.width;
+                canvas.height = img.naturalHeight || img.height;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                  ctx.drawImage(img, 0, 0);
+                  img.src = canvas.toDataURL('image/png');
+                }
+              } catch (e) {
+                console.warn('Could not convert image:', e);
+              }
+            }
+          }
+        }
       });
-      
-      console.log('Canvas created');
 
       const imageUrl = canvas.toDataURL("image/png");
       const link = document.createElement("a");
@@ -115,7 +109,6 @@ export const PaymentReceipt = ({ transaction, onClose }: PaymentReceiptProps) =>
       link.href = imageUrl;
       link.click();
 
-      // บันทึก URL ของรูปภาพลงฐานข้อมูล
       await supabase
         .from("pos_transactions")
         .update({ payment_image_url: imageUrl })
@@ -152,7 +145,7 @@ export const PaymentReceipt = ({ transaction, onClose }: PaymentReceiptProps) =>
         </div>
 
         <div className="p-8">
-          <div ref={receiptRef} className="bg-white p-8 rounded-lg shadow-lg">
+          <div ref={receiptRef} data-receipt className="bg-white p-8 rounded-lg shadow-lg">
             {/* Header */}
             <div className="text-center mb-6 border-b pb-6">
               {logoUrl && (
@@ -250,7 +243,7 @@ export const PaymentReceipt = ({ transaction, onClose }: PaymentReceiptProps) =>
                   สแกน QR Code เพื่อชำระเงินผ่านพร้อมเพย์
                 </p>
                 <div className="flex justify-center">
-                  <img src={qrCodeUrl} alt="QR Code" className="w-64 h-64" />
+                  <img src={qrCodeUrl} alt="QR Code" className="w-64 h-64" crossOrigin="anonymous" />
                 </div>
                 <p className="text-sm text-gray-500 mt-4">
                   จำนวนเงิน: ฿{transaction.total_amount.toFixed(2)}
