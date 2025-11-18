@@ -105,8 +105,27 @@ export const InvoiceHistory = ({ businessName, logoUrl }: InvoiceHistoryProps) =
           scale: 2,
           backgroundColor: "#ffffff",
           useCORS: true,
-          allowTaint: true,
+          allowTaint: false,
           logging: false,
+          onclone: (clonedDoc) => {
+            const images = clonedDoc.getElementsByTagName("img");
+            Array.from(images).forEach((img) => {
+              if (img.src && !img.src.startsWith("data:")) {
+                const canvas = document.createElement("canvas");
+                canvas.width = img.width;
+                canvas.height = img.height;
+                const ctx = canvas.getContext("2d");
+                if (ctx) {
+                  ctx.drawImage(img, 0, 0);
+                  try {
+                    img.src = canvas.toDataURL();
+                  } catch (e) {
+                    console.error("Error converting image:", e);
+                  }
+                }
+              }
+            });
+          },
         });
 
         const link = document.createElement("a");
