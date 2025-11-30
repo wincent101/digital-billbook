@@ -65,6 +65,8 @@ export default function FileManagement() {
   };
 
   const handleDelete = async (fileName: string) => {
+    setDeleteFile(null);
+    
     try {
       const { error } = await supabase.storage
         .from("invoice-files")
@@ -73,12 +75,12 @@ export default function FileManagement() {
       if (error) throw error;
 
       toast.success("ลบไฟล์สำเร็จ");
-      loadFiles();
+      
+      // รีเฟรชรายการไฟล์
+      await loadFiles();
     } catch (error) {
       console.error("Delete error:", error);
       toast.error("ไม่สามารถลบไฟล์ได้");
-    } finally {
-      setDeleteFile(null);
     }
   };
 
