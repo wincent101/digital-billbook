@@ -11,6 +11,7 @@ import POS from "./pages/POS";
 import { TransactionHistory } from "./components/TransactionHistory";
 import { CustomerManagement } from "./components/CustomerManagement";
 import Reports from "./pages/Reports";
+import FileManagement from "./pages/FileManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/pos/history" element={<TransactionHistory />} />
           <Route path="/customers" element={<CustomerManagement />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/files" element={<FileManagement />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

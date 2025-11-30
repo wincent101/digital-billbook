@@ -27,6 +27,8 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
   const [fileUrl, setFileUrl] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [items, setItems] = useState<any[]>([]);
+  const [totalAmount, setTotalAmount] = useState<number>(0);
 
   useEffect(() => {
     // โหลดข้อมูลจาก transaction ถ้ามีการส่งมาจากหน้าประวัติการขาย
@@ -38,21 +40,39 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
         // โหลดข้อมูลลูกค้าจาก transaction
         const { data: transaction } = await supabase
           .from("pos_transactions")
-          .select("customer_id")
+          .select("customer_id, total_amount")
           .eq("id", transactionId)
           .maybeSingle();
 
-        if (transaction?.customer_id) {
-          const { data: customer } = await supabase
-            .from("customers")
-            .select("*")
-            .eq("id", transaction.customer_id)
-            .single();
+        if (transaction) {
+          setTotalAmount(transaction.total_amount || 0);
 
-          if (customer) {
-            setCustomerName(customer.name);
-            setCustomerCode(customer.phone || customer.id);
-            setCustomerRank(customer.rank || "standard");
+          if (transaction.customer_id) {
+            const { data: customer } = await supabase
+              .from("customers")
+              .select("*")
+              .eq("id", transaction.customer_id)
+              .single();
+
+            if (customer) {
+              setCustomerName(customer.name);
+              setCustomerCode(customer.phone || customer.id);
+              setCustomerRank(customer.rank || "standard");
+            }
+          }
+
+          // โหลดรายการสินค้า
+          const { data: transactionItems } = await supabase
+            .from("transaction_items")
+            .select("product_name, quantity, unit_price")
+            .eq("transaction_id", transactionId);
+
+          if (transactionItems) {
+            setItems(transactionItems.map(item => ({
+              name: item.product_name,
+              quantity: item.quantity,
+              price: item.unit_price,
+            })));
           }
         }
       }
@@ -340,6 +360,8 @@ export const InvoiceForm = ({ businessName, logoUrl, signatureUrl }: InvoiceForm
           logoUrl={logoUrl}
           signatureUrl={signatureUrl}
           fileUrl={fileUrl}
+          items={items}
+          totalAmount={totalAmount}
         />
       </div>
     </div>

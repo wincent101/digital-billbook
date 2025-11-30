@@ -4,6 +4,12 @@ import QRCode from "qrcode";
 import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 
+interface InvoiceItem {
+  name: string;
+  quantity: number;
+  price: number;
+}
+
 interface InvoicePreviewProps {
   invoiceNumber: string;
   referenceNumber: string;
@@ -15,6 +21,8 @@ interface InvoicePreviewProps {
   signatureUrl?: string;
   fileUrl?: string;
   createdAt?: Date;
+  items?: InvoiceItem[];
+  totalAmount?: number;
 }
 
 export const InvoicePreview = ({
@@ -28,6 +36,8 @@ export const InvoicePreview = ({
   signatureUrl,
   fileUrl,
   createdAt = new Date(),
+  items = [],
+  totalAmount,
 }: InvoicePreviewProps) => {
   const [qrCodeUrl, setQrCodeUrl] = useState<string>("");
 
@@ -82,7 +92,6 @@ export const InvoicePreview = ({
               <h1 className="text-3xl font-bold mb-1 tracking-tight">
                 {businessName}
               </h1>
-              <p className="text-white/90 text-sm font-medium">ผู้ให้บริการมืออาชีพ</p>
             </div>
           </div>
           <div className="text-right bg-white/10 backdrop-blur-sm p-4 rounded-lg border border-white/20">
@@ -147,6 +156,51 @@ export const InvoicePreview = ({
             </div>
           </div>
         </div>
+
+        {/* Items Table */}
+        {items.length > 0 && (
+          <div className="mb-8 bg-gradient-to-br from-muted/30 to-background p-6 rounded-lg border border-border/50">
+            <h3 className="text-lg font-bold mb-4 text-foreground">รายการสินค้า</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="border-b-2 border-primary/20">
+                  <tr className="text-sm">
+                    <th className="text-left py-3 font-semibold text-foreground">รายการ</th>
+                    <th className="text-center py-3 font-semibold text-foreground">จำนวน</th>
+                    <th className="text-right py-3 font-semibold text-foreground">ราคา/หน่วย</th>
+                    <th className="text-right py-3 font-semibold text-foreground">รวม</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {items.map((item, index) => (
+                    <tr key={index} className="border-b border-border/30">
+                      <td className="py-3 text-foreground">{item.name}</td>
+                      <td className="text-center py-3 text-foreground">{item.quantity}</td>
+                      <td className="text-right py-3 text-foreground">
+                        ฿{item.price.toFixed(2)}
+                      </td>
+                      <td className="text-right py-3 text-foreground font-semibold">
+                        ฿{(item.price * item.quantity).toFixed(2)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                {totalAmount !== undefined && (
+                  <tfoot className="border-t-2 border-primary/30">
+                    <tr>
+                      <td colSpan={3} className="text-right py-4 font-bold text-lg text-foreground">
+                        ยอดรวมทั้งหมด:
+                      </td>
+                      <td className="text-right py-4 font-bold text-xl text-primary">
+                        ฿{totalAmount.toFixed(2)}
+                      </td>
+                    </tr>
+                  </tfoot>
+                )}
+              </table>
+            </div>
+          </div>
+        )}
 
         {/* QR Code Section */}
         {fileUrl && qrCodeUrl && (
