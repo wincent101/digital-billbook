@@ -33,6 +33,8 @@ export default function POS() {
   const [customerRank, setCustomerRank] = useState("standard");
   const [customers, setCustomers] = useState<any[]>([]);
   const [showCustomerSuggestions, setShowCustomerSuggestions] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quantityInput, setQuantityInput] = useState(1);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -95,18 +97,31 @@ export default function POS() {
     setShowCustomerSuggestions(false);
   };
 
-  const addToCart = (product: Product) => {
+  const addToCart = (product: Product, quantity: number = 1) => {
     const existingItem = cart.find((item) => item.id === product.id);
     if (existingItem) {
       setCart(
         cart.map((item) =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
+            ? { ...item, quantity: item.quantity + quantity }
             : item
         )
       );
     } else {
-      setCart([...cart, { ...product, quantity: 1 }]);
+      setCart([...cart, { ...product, quantity }]);
+    }
+    setSelectedProduct(null);
+    setQuantityInput(1);
+  };
+
+  const handleProductClick = (product: Product) => {
+    setSelectedProduct(product);
+    setQuantityInput(1);
+  };
+
+  const handleAddWithQuantity = () => {
+    if (selectedProduct && quantityInput > 0) {
+      addToCart(selectedProduct, quantityInput);
     }
   };
 
@@ -283,6 +298,73 @@ export default function POS() {
     );
   }
 
+  // Quantity Input Dialog
+  if (selectedProduct) {
+    return (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle>เพิ่มสินค้าในตะกร้า</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <h3 className="font-semibold text-lg mb-2">{selectedProduct.name}</h3>
+              <p className="text-primary font-bold text-xl">
+                ฿{selectedProduct.price.toFixed(2)}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="quantity">จำนวน</Label>
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setQuantityInput(Math.max(1, quantityInput - 1))}
+                >
+                  <Minus className="h-4 w-4" />
+                </Button>
+                <Input
+                  id="quantity"
+                  type="number"
+                  min="1"
+                  value={quantityInput}
+                  onChange={(e) => setQuantityInput(Math.max(1, parseInt(e.target.value) || 1))}
+                  className="text-center font-bold text-lg"
+                />
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setQuantityInput(quantityInput + 1)}
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => {
+                  setSelectedProduct(null);
+                  setQuantityInput(1);
+                }}
+              >
+                ยกเลิก
+              </Button>
+              <Button
+                variant="default"
+                className="flex-1"
+                onClick={handleAddWithQuantity}
+              >
+                เพิ่มในตะกร้า
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5">
       {/* Header/Navbar */}
@@ -337,7 +419,7 @@ export default function POS() {
                     <Card
                       key={product.id}
                       className="cursor-pointer hover:shadow-lg transition-shadow"
-                      onClick={() => addToCart(product)}
+                      onClick={() => handleProductClick(product)}
                     >
                       <CardContent className="p-4">
                         <h3 className="font-semibold text-lg mb-2">{product.name}</h3>

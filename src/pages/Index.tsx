@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Settings, FileText, History, LogOut, Shield, ShoppingCart, Users, BarChart3 } from "lucide-react";
+import { Settings, FileText, History, LogOut, Shield, ShoppingCart, Users, BarChart3, FolderOpen } from "lucide-react";
 import { InvoiceForm } from "@/components/InvoiceForm";
 import { SettingsPage } from "@/components/SettingsPage";
 import { InvoiceHistory } from "@/components/InvoiceHistory";
@@ -119,6 +119,14 @@ const Index = () => {
               >
                 <BarChart3 className="h-4 w-4" />
                 รายงานขาย
+              </Button>
+              <Button
+                onClick={() => navigate("/files")}
+                variant="outline"
+                className="gap-2"
+              >
+                <FolderOpen className="h-4 w-4" />
+                จัดการไฟล์
               </Button>
               {isAdmin && (
                 <Button
