@@ -190,6 +190,56 @@ export type Database = {
         }
         Relationships: []
       }
+      refunds: {
+        Row: {
+          account_name: string | null
+          account_number: string
+          bank_name: string
+          created_at: string
+          id: string
+          reason: string
+          refund_amount: number
+          refund_number: string
+          status: string
+          transaction_id: string
+          updated_at: string
+        }
+        Insert: {
+          account_name?: string | null
+          account_number: string
+          bank_name: string
+          created_at?: string
+          id?: string
+          reason: string
+          refund_amount: number
+          refund_number: string
+          status?: string
+          transaction_id: string
+          updated_at?: string
+        }
+        Update: {
+          account_name?: string | null
+          account_number?: string
+          bank_name?: string
+          created_at?: string
+          id?: string
+          reason?: string
+          refund_amount?: number
+          refund_number?: string
+          status?: string
+          transaction_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "refunds_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "pos_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transaction_items: {
         Row: {
           created_at: string
