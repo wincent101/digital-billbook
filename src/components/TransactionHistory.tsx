@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Download, Eye, Trash2, Home, ShoppingCart } from "lucide-react";
+import { FileText, Eye, Trash2, Home, ShoppingCart, RotateCcw, Receipt } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -25,6 +25,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { PaymentReceipt } from "./PaymentReceipt";
+import RefundForm from "./RefundForm";
+import RefundReceipt from "./RefundReceipt";
 
 interface Transaction {
   id: string;
@@ -37,17 +39,53 @@ interface Transaction {
   customer_id: string | null;
 }
 
+interface Refund {
+  id: string;
+  refund_number: string;
+  refund_amount: number;
+  reason: string;
+  bank_name: string;
+  account_number: string;
+  account_name: string | null;
+  status: string;
+  created_at: string;
+  transaction_id: string;
+}
+
 export const TransactionHistory = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [viewTransaction, setViewTransaction] = useState<any>(null);
+  const [refundTransaction, setRefundTransaction] = useState<Transaction | null>(null);
+  const [viewRefund, setViewRefund] = useState<{ refund: Refund; transaction: Transaction } | null>(null);
+  const [refunds, setRefunds] = useState<Record<string, Refund[]>>({});
   const { toast } = useToast();
   const navigate = useNavigate();
 
   useEffect(() => {
     checkAuthAndLoad();
   }, []);
+
+  const loadRefunds = async (transactionIds: string[]) => {
+    if (transactionIds.length === 0) return;
+    
+    const { data, error } = await supabase
+      .from("refunds")
+      .select("*")
+      .in("transaction_id", transactionIds);
+
+    if (!error && data) {
+      const refundMap: Record<string, Refund[]> = {};
+      data.forEach((refund: Refund) => {
+        if (!refundMap[refund.transaction_id]) {
+          refundMap[refund.transaction_id] = [];
+        }
+        refundMap[refund.transaction_id].push(refund);
+      });
+      setRefunds(refundMap);
+    }
+  };
 
   const checkAuthAndLoad = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -74,6 +112,11 @@ export const TransactionHistory = () => {
       if (error) throw error;
       
       setTransactions(data || []);
+      
+      // Load refunds for all transactions
+      if (data && data.length > 0) {
+        await loadRefunds(data.map((t: Transaction) => t.id));
+      }
     } catch (error: any) {
       console.error("Load transactions error:", error);
       toast({
@@ -227,6 +270,16 @@ export const TransactionHistory = () => {
     }
   };
 
+  if (viewRefund) {
+    return (
+      <RefundReceipt
+        refund={viewRefund.refund}
+        transaction={viewRefund.transaction}
+        onClose={() => setViewRefund(null)}
+      />
+    );
+  }
+
   if (viewTransaction) {
     return (
       <PaymentReceipt
@@ -378,13 +431,13 @@ export const TransactionHistory = () => {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex gap-2 justify-end">
+                        <TableCell className="text-right">
+                        <div className="flex flex-wrap gap-2 justify-end">
                           <Button
                             size="sm"
                             variant="outline"
                             onClick={() => handleViewReceipt(transaction)}
-                            className="gap-2"
+                            className="gap-1"
                           >
                             <Eye className="h-4 w-4" />
                             ดู/พิมพ์
@@ -400,11 +453,32 @@ export const TransactionHistory = () => {
                                 totalAmount: transaction.total_amount
                               } 
                             })}
-                            className="gap-2"
+                            className="gap-1"
                           >
                             <FileText className="h-4 w-4" />
                             สร้างใบเสร็จ
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            onClick={() => setRefundTransaction(transaction)}
+                            className="gap-1"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                            คืนเงิน
+                          </Button>
+                          {refunds[transaction.id]?.map((refund) => (
+                            <Button
+                              key={refund.id}
+                              size="sm"
+                              variant="outline"
+                              onClick={() => setViewRefund({ refund, transaction })}
+                              className="gap-1 text-red-600 border-red-200"
+                            >
+                              <Receipt className="h-4 w-4" />
+                              ใบคืนเงิน
+                            </Button>
+                          ))}
                           <Button
                             size="sm"
                             variant="destructive"
@@ -437,6 +511,14 @@ export const TransactionHistory = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {refundTransaction && (
+        <RefundForm
+          transaction={refundTransaction}
+          onClose={() => setRefundTransaction(null)}
+          onSuccess={loadTransactions}
+        />
+      )}
       </div>
     </div>
   );
