@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
-import { FileText, Eye, Trash2, Home, ShoppingCart, RotateCcw, Receipt } from "lucide-react";
+import { FileText, Eye, Trash2, Home, ShoppingCart, RotateCcw, Receipt, Truck, Package } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import {
   AlertDialog,
@@ -27,6 +27,8 @@ import {
 import { PaymentReceipt } from "./PaymentReceipt";
 import RefundForm from "./RefundForm";
 import RefundReceipt from "./RefundReceipt";
+import DeliveryBatchForm from "./DeliveryBatchForm";
+import DeliveryBatchReceipt from "./DeliveryBatchReceipt";
 
 interface Transaction {
   id: string;
@@ -52,6 +54,16 @@ interface Refund {
   transaction_id: string;
 }
 
+interface DeliveryBatch {
+  id: string;
+  batch_number: string;
+  delivery_date: string;
+  notes: string | null;
+  status: string;
+  created_at: string;
+  transaction_id: string;
+}
+
 export const TransactionHistory = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
@@ -60,6 +72,14 @@ export const TransactionHistory = () => {
   const [refundTransaction, setRefundTransaction] = useState<Transaction | null>(null);
   const [viewRefund, setViewRefund] = useState<{ refund: Refund; transaction: Transaction } | null>(null);
   const [refunds, setRefunds] = useState<Record<string, Refund[]>>({});
+  const [deliveryBatches, setDeliveryBatches] = useState<Record<string, DeliveryBatch[]>>({});
+  const [deliveryBatchTransaction, setDeliveryBatchTransaction] = useState<Transaction | null>(null);
+  const [viewDeliveryBatch, setViewDeliveryBatch] = useState<{
+    batch: DeliveryBatch;
+    transaction: Transaction;
+    totalBatches: number;
+    batchIndex: number;
+  } | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -113,9 +133,13 @@ export const TransactionHistory = () => {
       
       setTransactions(data || []);
       
-      // Load refunds for all transactions
+      // Load refunds and delivery batches for all transactions
       if (data && data.length > 0) {
-        await loadRefunds(data.map((t: Transaction) => t.id));
+        const transactionIds = data.map((t: Transaction) => t.id);
+        await Promise.all([
+          loadRefunds(transactionIds),
+          loadDeliveryBatches(transactionIds),
+        ]);
       }
     } catch (error: any) {
       console.error("Load transactions error:", error);
@@ -126,6 +150,27 @@ export const TransactionHistory = () => {
       });
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDeliveryBatches = async (transactionIds: string[]) => {
+    if (transactionIds.length === 0) return;
+    
+    const { data, error } = await supabase
+      .from("delivery_batches")
+      .select("*")
+      .in("transaction_id", transactionIds)
+      .order("created_at", { ascending: true });
+
+    if (!error && data) {
+      const batchMap: Record<string, DeliveryBatch[]> = {};
+      data.forEach((batch: DeliveryBatch) => {
+        if (!batchMap[batch.transaction_id]) {
+          batchMap[batch.transaction_id] = [];
+        }
+        batchMap[batch.transaction_id].push(batch);
+      });
+      setDeliveryBatches(batchMap);
     }
   };
 
@@ -269,6 +314,18 @@ export const TransactionHistory = () => {
       });
     }
   };
+
+  if (viewDeliveryBatch) {
+    return (
+      <DeliveryBatchReceipt
+        batch={viewDeliveryBatch.batch}
+        transaction={viewDeliveryBatch.transaction}
+        totalBatches={viewDeliveryBatch.totalBatches}
+        batchIndex={viewDeliveryBatch.batchIndex}
+        onClose={() => setViewDeliveryBatch(null)}
+      />
+    );
+  }
 
   if (viewRefund) {
     return (
@@ -467,6 +524,39 @@ export const TransactionHistory = () => {
                             <RotateCcw className="h-4 w-4" />
                             คืนเงิน
                           </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setDeliveryBatchTransaction(transaction)}
+                            className="gap-1 text-blue-600 border-blue-200"
+                          >
+                            <Truck className="h-4 w-4" />
+                            แบ่งส่งงาน
+                            {deliveryBatches[transaction.id]?.length > 0 && (
+                              <Badge variant="secondary" className="ml-1 text-xs">
+                                {deliveryBatches[transaction.id].length}
+                              </Badge>
+                            )}
+                          </Button>
+                          {deliveryBatches[transaction.id]?.map((batch, index) => (
+                            <Button
+                              key={batch.id}
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                setViewDeliveryBatch({
+                                  batch,
+                                  transaction,
+                                  totalBatches: deliveryBatches[transaction.id].length,
+                                  batchIndex: index + 1,
+                                })
+                              }
+                              className="gap-1 text-green-600 border-green-200"
+                            >
+                              <Package className="h-4 w-4" />
+                              รอบ {index + 1}
+                            </Button>
+                          ))}
                           {refunds[transaction.id]?.map((refund) => (
                             <Button
                               key={refund.id}
@@ -516,6 +606,14 @@ export const TransactionHistory = () => {
         <RefundForm
           transaction={refundTransaction}
           onClose={() => setRefundTransaction(null)}
+          onSuccess={loadTransactions}
+        />
+      )}
+
+      {deliveryBatchTransaction && (
+        <DeliveryBatchForm
+          transaction={deliveryBatchTransaction}
+          onClose={() => setDeliveryBatchTransaction(null)}
           onSuccess={loadTransactions}
         />
       )}
