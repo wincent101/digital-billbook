@@ -77,6 +77,80 @@ export type Database = {
         }
         Relationships: []
       }
+      delivery_batch_items: {
+        Row: {
+          batch_id: string
+          created_at: string | null
+          id: string
+          product_name: string
+          quantity: number
+          subtotal: number
+          transaction_item_id: string
+          unit_price: number
+        }
+        Insert: {
+          batch_id: string
+          created_at?: string | null
+          id?: string
+          product_name: string
+          quantity: number
+          subtotal: number
+          transaction_item_id: string
+          unit_price: number
+        }
+        Update: {
+          batch_id?: string
+          created_at?: string | null
+          id?: string
+          product_name?: string
+          quantity?: number
+          subtotal?: number
+          transaction_item_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "delivery_batch_items_batch_id_fkey"
+            columns: ["batch_id"]
+            isOneToOne: false
+            referencedRelation: "delivery_batches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      delivery_batches: {
+        Row: {
+          batch_number: string
+          created_at: string | null
+          delivery_date: string | null
+          id: string
+          notes: string | null
+          status: string | null
+          transaction_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          batch_number: string
+          created_at?: string | null
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          transaction_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          batch_number?: string
+          created_at?: string | null
+          delivery_date?: string | null
+          id?: string
+          notes?: string | null
+          status?: string | null
+          transaction_id?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       invoices: {
         Row: {
           created_at: string
