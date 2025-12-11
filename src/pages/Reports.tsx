@@ -197,11 +197,14 @@ export default function Reports() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
+            <p className="text-sm font-medium text-accent uppercase tracking-wider mb-1">
+              ร้านค้าในเครือ Kwint.shop
+            </p>
             <h1 className="text-4xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              รายงานสรุปยอดขาย
+              สรุปผลประกอบการ
             </h1>
             <p className="text-muted-foreground mt-2">
-              ติดตามและวิเคราะห์ยอดขายของคุณ
+              ติดตามและวิเคราะห์ผลประกอบการของร้านค้า
             </p>
           </div>
           <Button onClick={() => navigate("/")} variant="outline">
