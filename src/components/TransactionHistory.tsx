@@ -127,19 +127,19 @@ export const TransactionHistory = () => {
         .from("pos_transactions")
         .select("*")
         .order("created_at", { ascending: false })
-        .limit(100);
+        .limit(50);
 
       if (error) throw error;
       
       setTransactions(data || []);
+      setLoading(false);
       
-      // Load refunds and delivery batches for all transactions
+      // Load refunds and delivery batches in background (non-blocking)
       if (data && data.length > 0) {
         const transactionIds = data.map((t: Transaction) => t.id);
-        await Promise.all([
-          loadRefunds(transactionIds),
-          loadDeliveryBatches(transactionIds),
-        ]);
+        // Fire and forget - don't await
+        loadRefunds(transactionIds);
+        loadDeliveryBatches(transactionIds);
       }
     } catch (error: any) {
       console.error("Load transactions error:", error);
@@ -148,7 +148,6 @@ export const TransactionHistory = () => {
         description: error.message || "ไม่สามารถโหลดประวัติการทำรายการได้",
         variant: "destructive",
       });
-    } finally {
       setLoading(false);
     }
   };
