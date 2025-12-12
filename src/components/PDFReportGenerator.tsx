@@ -30,6 +30,32 @@ interface TopCustomer {
   totalSpent: number;
 }
 
+// Function to load Thai font
+const loadThaiFont = async (doc: jsPDF) => {
+  try {
+    // Fetch Sarabun font from jsDelivr CDN (TTF format required for jsPDF)
+    const fontUrl = "https://cdn.jsdelivr.net/npm/font-th-sarabun-new@1.0.0/fonts/THSarabunNew-webfont.ttf";
+    const response = await fetch(fontUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    
+    // Convert ArrayBuffer to base64
+    const base64 = btoa(
+      new Uint8Array(arrayBuffer)
+        .reduce((data, byte) => data + String.fromCharCode(byte), '')
+    );
+    
+    // Add font to jsPDF
+    doc.addFileToVFS("THSarabunNew.ttf", base64);
+    doc.addFont("THSarabunNew.ttf", "THSarabunNew", "normal");
+    doc.setFont("THSarabunNew");
+    
+    return true;
+  } catch (error) {
+    console.error("Failed to load Thai font:", error);
+    return false;
+  }
+};
+
 export const generatePDFReport = async (
   summary: SummaryData,
   dailyData: SalesData[],
@@ -107,6 +133,13 @@ export const generatePDFReport = async (
       format: "a4"
     });
 
+    // Load Thai font
+    const fontLoaded = await loadThaiFont(doc);
+    if (!fontLoaded) {
+      toast.error("ไม่สามารถโหลดฟอนต์ภาษาไทยได้");
+      return;
+    }
+
     const pageWidth = doc.internal.pageSize.getWidth();
     const pageHeight = doc.internal.pageSize.getHeight();
     const margin = 15;
@@ -125,6 +158,7 @@ export const generatePDFReport = async (
     const checkNewPage = (requiredSpace: number) => {
       if (yPosition + requiredSpace > pageHeight - margin) {
         doc.addPage();
+        doc.setFont("THSarabunNew");
         yPosition = margin;
         return true;
       }
@@ -138,29 +172,29 @@ export const generatePDFReport = async (
     
     // Title
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(24);
+    doc.setFontSize(28);
     doc.text("รายงานสรุปผลประกอบการ", pageWidth / 2, 22, { align: "center" });
     
     // Subtitle
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     const businessName = businessSettings?.business_name || "ร้านค้าในเครือ Kwint.shop";
-    doc.text(businessName, pageWidth / 2, 32, { align: "center" });
+    doc.text(businessName, pageWidth / 2, 34, { align: "center" });
     
     // Report date
-    doc.setFontSize(10);
-    doc.text(`วันที่ออกรายงาน: ${format(new Date(), "d MMMM yyyy เวลา HH:mm น.", { locale: th })}`, pageWidth / 2, 42, { align: "center" });
+    doc.setFontSize(12);
+    doc.text(`วันที่ออกรายงาน: ${format(new Date(), "d MMMM yyyy เวลา HH:mm น.", { locale: th })}`, pageWidth / 2, 44, { align: "center" });
 
     yPosition = 60;
 
     // === SUMMARY SECTION ===
     doc.setTextColor(103, 58, 183);
-    doc.setFontSize(16);
+    doc.setFontSize(18);
     doc.text("ภาพรวมผลประกอบการ", margin, yPosition);
     yPosition += 10;
 
     // Summary boxes
     const boxWidth = (pageWidth - margin * 2 - 15) / 4;
-    const boxHeight = 25;
+    const boxHeight = 28;
     const boxes = [
       { label: "ยอดขายรวม", value: formatCurrency(summary.totalSales), color: [103, 58, 183] as [number, number, number] },
       { label: "จำนวนออเดอร์", value: summary.totalOrders.toString() + " รายการ", color: [156, 39, 176] as [number, number, number] },
@@ -174,10 +208,10 @@ export const generatePDFReport = async (
       doc.roundedRect(x, yPosition, boxWidth, boxHeight, 3, 3, "F");
       
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8);
-      doc.text(box.label, x + boxWidth / 2, yPosition + 8, { align: "center" });
       doc.setFontSize(10);
-      doc.text(box.value, x + boxWidth / 2, yPosition + 17, { align: "center" });
+      doc.text(box.label, x + boxWidth / 2, yPosition + 10, { align: "center" });
+      doc.setFontSize(11);
+      doc.text(box.value, x + boxWidth / 2, yPosition + 20, { align: "center" });
     });
 
     yPosition += boxHeight + 15;
@@ -192,7 +226,7 @@ export const generatePDFReport = async (
                        "ยอดขายรายวัน (7 วันล่าสุด)";
 
     doc.setTextColor(103, 58, 183);
-    doc.setFontSize(14);
+    doc.setFontSize(16);
     doc.text(tableTitle, margin, yPosition);
     yPosition += 5;
 
@@ -206,13 +240,15 @@ export const generatePDFReport = async (
         formatCurrency(item.count > 0 ? item.amount / item.count : 0)
       ]),
       styles: {
-        fontSize: 9,
-        cellPadding: 4
+        fontSize: 11,
+        cellPadding: 4,
+        font: "THSarabunNew"
       },
       headStyles: {
         fillColor: [103, 58, 183],
         textColor: [255, 255, 255],
-        fontStyle: "bold"
+        fontStyle: "normal",
+        font: "THSarabunNew"
       },
       alternateRowStyles: {
         fillColor: [245, 243, 255]
@@ -227,7 +263,7 @@ export const generatePDFReport = async (
       // Weekly data
       checkNewPage(80);
       doc.setTextColor(103, 58, 183);
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.text("ยอดขายรายสัปดาห์ (8 สัปดาห์)", margin, yPosition);
       yPosition += 5;
 
@@ -240,8 +276,8 @@ export const generatePDFReport = async (
           item.count.toString(),
           formatCurrency(item.count > 0 ? item.amount / item.count : 0)
         ]),
-        styles: { fontSize: 9, cellPadding: 4 },
-        headStyles: { fillColor: [156, 39, 176], textColor: [255, 255, 255], fontStyle: "bold" },
+        styles: { fontSize: 11, cellPadding: 4, font: "THSarabunNew" },
+        headStyles: { fillColor: [156, 39, 176], textColor: [255, 255, 255], fontStyle: "normal", font: "THSarabunNew" },
         alternateRowStyles: { fillColor: [252, 243, 255] },
         margin: { left: margin, right: margin }
       });
@@ -251,7 +287,7 @@ export const generatePDFReport = async (
       // Monthly data
       checkNewPage(100);
       doc.setTextColor(103, 58, 183);
-      doc.setFontSize(14);
+      doc.setFontSize(16);
       doc.text("ยอดขายรายเดือน (12 เดือน)", margin, yPosition);
       yPosition += 5;
 
@@ -264,8 +300,8 @@ export const generatePDFReport = async (
           item.count.toString(),
           formatCurrency(item.count > 0 ? item.amount / item.count : 0)
         ]),
-        styles: { fontSize: 9, cellPadding: 4 },
-        headStyles: { fillColor: [123, 31, 162], textColor: [255, 255, 255], fontStyle: "bold" },
+        styles: { fontSize: 11, cellPadding: 4, font: "THSarabunNew" },
+        headStyles: { fillColor: [123, 31, 162], textColor: [255, 255, 255], fontStyle: "normal", font: "THSarabunNew" },
         alternateRowStyles: { fillColor: [248, 243, 255] },
         margin: { left: margin, right: margin }
       });
@@ -276,7 +312,7 @@ export const generatePDFReport = async (
       if (topProducts.length > 0) {
         checkNewPage(80);
         doc.setTextColor(103, 58, 183);
-        doc.setFontSize(14);
+        doc.setFontSize(16);
         doc.text("สินค้าขายดี Top 10", margin, yPosition);
         yPosition += 5;
 
@@ -289,8 +325,8 @@ export const generatePDFReport = async (
             product.quantity.toString(),
             formatCurrency(product.revenue)
           ]),
-          styles: { fontSize: 9, cellPadding: 4 },
-          headStyles: { fillColor: [74, 20, 140], textColor: [255, 255, 255], fontStyle: "bold" },
+          styles: { fontSize: 11, cellPadding: 4, font: "THSarabunNew" },
+          headStyles: { fillColor: [74, 20, 140], textColor: [255, 255, 255], fontStyle: "normal", font: "THSarabunNew" },
           alternateRowStyles: { fillColor: [245, 240, 255] },
           margin: { left: margin, right: margin }
         });
@@ -302,7 +338,7 @@ export const generatePDFReport = async (
       if (topCustomers.length > 0) {
         checkNewPage(80);
         doc.setTextColor(103, 58, 183);
-        doc.setFontSize(14);
+        doc.setFontSize(16);
         doc.text("ลูกค้าประจำ Top 10", margin, yPosition);
         yPosition += 5;
 
@@ -315,8 +351,8 @@ export const generatePDFReport = async (
             customer.totalOrders.toString(),
             formatCurrency(customer.totalSpent)
           ]),
-          styles: { fontSize: 9, cellPadding: 4 },
-          headStyles: { fillColor: [103, 58, 183], textColor: [255, 255, 255], fontStyle: "bold" },
+          styles: { fontSize: 11, cellPadding: 4, font: "THSarabunNew" },
+          headStyles: { fillColor: [103, 58, 183], textColor: [255, 255, 255], fontStyle: "normal", font: "THSarabunNew" },
           alternateRowStyles: { fillColor: [245, 243, 255] },
           margin: { left: margin, right: margin }
         });
@@ -327,13 +363,14 @@ export const generatePDFReport = async (
     const totalPages = doc.getNumberOfPages();
     for (let i = 1; i <= totalPages; i++) {
       doc.setPage(i);
+      doc.setFont("THSarabunNew");
       doc.setFillColor(103, 58, 183);
       doc.rect(0, pageHeight - 15, pageWidth, 15, "F");
       
       doc.setTextColor(255, 255, 255);
-      doc.setFontSize(8);
-      doc.text(businessName, margin, pageHeight - 6);
-      doc.text(`หน้า ${i} / ${totalPages}`, pageWidth - margin, pageHeight - 6, { align: "right" });
+      doc.setFontSize(10);
+      doc.text(businessName, margin, pageHeight - 5);
+      doc.text(`หน้า ${i} / ${totalPages}`, pageWidth - margin, pageHeight - 5, { align: "right" });
     }
 
     // Generate filename
