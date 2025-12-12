@@ -5,10 +5,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { format, startOfDay, endOfDay, startOfWeek, endOfWeek, startOfMonth, endOfMonth, subDays, subWeeks, subMonths } from "date-fns";
 import { th } from "date-fns/locale";
-import { TrendingUp, ShoppingCart, DollarSign, Package } from "lucide-react";
+import { TrendingUp, ShoppingCart, DollarSign, Package, FileText, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-
+import { generatePDFReport } from "@/components/PDFReportGenerator";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 interface SalesData {
   date: string;
   amount: number;
@@ -207,9 +208,38 @@ export default function Reports() {
               ติดตามและวิเคราะห์ผลประกอบการของร้านค้า
             </p>
           </div>
-          <Button onClick={() => navigate("/")} variant="outline">
-            กลับหน้าหลัก
-          </Button>
+          <div className="flex gap-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className="gap-2 bg-gradient-to-r from-primary to-accent hover:opacity-90">
+                  <FileText className="h-4 w-4" />
+                  ดาวน์โหลด PDF
+                  <Download className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem onClick={() => generatePDFReport(summary, dailyData, weeklyData, monthlyData, "daily")}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  รายงานรายวัน (7 วัน)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => generatePDFReport(summary, dailyData, weeklyData, monthlyData, "weekly")}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  รายงานรายสัปดาห์ (8 สัปดาห์)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => generatePDFReport(summary, dailyData, weeklyData, monthlyData, "monthly")}>
+                  <FileText className="h-4 w-4 mr-2" />
+                  รายงานรายเดือน (12 เดือน)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => generatePDFReport(summary, dailyData, weeklyData, monthlyData, "full")} className="text-primary font-semibold">
+                  <FileText className="h-4 w-4 mr-2" />
+                  รายงานฉบับเต็ม
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <Button onClick={() => navigate("/")} variant="outline">
+              กลับหน้าหลัก
+            </Button>
+          </div>
         </div>
 
         {/* Summary Cards */}
